@@ -10,6 +10,9 @@ RUN npm run build
 FROM python:3.12-slim AS runtime
 WORKDIR /app
 
+# Install timezone data (python:3.12-slim lacks it)
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata && rm -rf /var/lib/apt/lists/*
+
 # Install backend dependencies
 COPY backend/pyproject.toml backend/
 COPY backend/app/ backend/app/
