@@ -88,20 +88,20 @@ async def get_global_crises():
     import json as _json
 
     from app.config import Settings
-    from app.services.reliefweb import fetch_current_crises, filter_crises_with_ai
+    from app.services.reliefweb import fetch_world_headlines, filter_crises_with_ai
 
-    # Check localStorage-style server cache (in-memory for simplicity)
+    # In-memory cache (1 hour)
     cache_key = "_crises_cache"
     cache = getattr(get_global_crises, cache_key, None)
     if cache:
         ts, data = cache
         import time
-        if time.time() - ts < 3600:  # 1 hour cache
+        if time.time() - ts < 3600:
             return data
 
     settings = Settings()
-    raw = await fetch_current_crises(limit=20)
-    filtered = await filter_crises_with_ai(raw, settings)
+    headlines = await fetch_world_headlines(limit=20)
+    filtered = await filter_crises_with_ai(headlines, settings)
 
     # Cache result
     import time
