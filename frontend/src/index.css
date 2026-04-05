@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  /* Dark mode base colors */
+  --color-background: #0f172a;
+  --color-foreground: #f8fafc;
+  --color-card: #1e293b;
+  --color-card-foreground: #f1f5f9;
+  --color-border: #334155;
+  --color-muted: #334155;
+  --color-muted-foreground: #94a3b8;
+
+  /* Market colors */
+  --color-bullish: #22c55e;
+  --color-bearish: #ef4444;
+
+  /* Regime colors */
+  --color-goldilocks: #22c55e;
+  --color-reflation: #f59e0b;
+  --color-stagflation: #ef4444;
+  --color-deflation: #3b82f6;
+
+  /* Impact score colors */
+  --color-impact-low: #6b7280;
+  --color-impact-medium: #f59e0b;
+  --color-impact-high: #ef4444;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
