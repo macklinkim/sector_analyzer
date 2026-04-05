@@ -10,32 +10,21 @@ interface RangeChartProps {
 }
 
 function BulletBar({ sector }: { sector: Sector }) {
-  const low = sector.week_52_low ?? 0;
-  const high = sector.week_52_high ?? 0;
   const current = sector.price;
 
-  // Data validation: skip if no valid range
-  const hasData = low > 0 && high > 0 && high > low;
-  const dataError = low > 0 && high > 0 && low >= high;
+  // Use real 52-week data if available, otherwise estimate from current price
+  const hasRealData = (sector.week_52_low ?? 0) > 0 && (sector.week_52_high ?? 0) > 0;
+  const low = hasRealData ? sector.week_52_low! : current * 0.8;
+  const high = hasRealData ? sector.week_52_high! : current * 1.2;
+  const estimated = !hasRealData;
 
-  if (!hasData && !dataError) {
+  if (low >= high) {
     return (
       <div className="flex items-center gap-3 py-1.5">
         <span className="w-16 shrink-0 text-xs font-medium text-foreground">
           {getSectorLabel(sector.etf_symbol)}
         </span>
-        <span className="text-xs text-muted-foreground">데이터 없음</span>
-      </div>
-    );
-  }
-
-  if (dataError) {
-    return (
-      <div className="flex items-center gap-3 py-1.5">
-        <span className="w-16 shrink-0 text-xs font-medium text-foreground">
-          {getSectorLabel(sector.etf_symbol)}
-        </span>
-        <span className="text-xs text-bearish">⚠ 데이터 오류 (Low {formatPrice(low)} &gt; High {formatPrice(high)})</span>
+        <span className="text-xs text-bearish">데이터 오류</span>
       </div>
     );
   }
@@ -86,6 +75,11 @@ function BulletBar({ sector }: { sector: Sector }) {
       <span className={`w-16 shrink-0 text-right font-mono text-xs font-semibold ${inRange ? "text-emerald-400" : "text-red-400"}`}>
         {formatPrice(current)}
       </span>
+
+      {/* Estimated indicator */}
+      {estimated && (
+        <span className="w-4 shrink-0 text-[9px] text-muted-foreground" title="추정 범위">*</span>
+      )}
     </div>
   );
 }
@@ -109,7 +103,7 @@ export function RangeChart({ sectors, loading }: RangeChartProps) {
       <CardHeader>
         <CardTitle>52주 범위 차트</CardTitle>
         <p className="text-xs text-muted-foreground">
-          최저가 — 현재가 위치 — 최고가 (녹색: 범위 내, 적색: 범위 이탈)
+          최저가 — 현재가 위치 — 최고가 (녹색: 범위 내, 적색: 범위 이탈, *추정)
         </p>
       </CardHeader>
       <CardContent>
