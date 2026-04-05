@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # Trigger API Key (manual pipeline trigger protection)
     trigger_api_key: str = ""
 
+    # Simple auth: comma-separated allowed names
+    allowed_users: str = "admin"
+
     # Playwright
     playwright_timeout_sec: int = 30
     playwright_max_instances: int = 2

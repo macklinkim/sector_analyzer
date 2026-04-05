@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { LoginGate, logout, useAuth } from "@/components/auth/LoginGate";
 import { useAnalysisData } from "@/hooks/useAnalysisData";
 import { useMarketData } from "@/hooks/useMarketData";
 import { useNewsData } from "@/hooks/useNewsData";
@@ -12,7 +13,8 @@ import { EconomicCalendar } from "@/components/news/EconomicCalendar";
 import { MultiChartGrid } from "@/components/chart/MultiChartGrid";
 import { AiScreenerTable } from "@/components/screener/AiScreenerTable";
 
-export default function App() {
+function Dashboard() {
+  const { name } = useAuth();
   const marketData = useMarketData();
   const newsData = useNewsData();
   const analysisData = useAnalysisData();
@@ -83,10 +85,31 @@ export default function App() {
         />
       </section>
 
-      {/* Disclaimer */}
-      <footer className="border-t border-border px-4 py-3 text-center text-xs text-muted-foreground">
-        본 분석은 AI의 추론이며, 실제 투자 판단의 근거로 사용할 수 없습니다.
+      {/* Footer */}
+      <footer className="border-t border-border px-4 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            본 분석은 AI의 추론이며, 실제 투자 판단의 근거로 사용할 수 없습니다.
+          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">{name}</span>
+            <button
+              onClick={logout}
+              className="text-xs text-muted-foreground underline hover:text-foreground"
+            >
+              로그아웃
+            </button>
+          </div>
+        </div>
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LoginGate>
+      <Dashboard />
+    </LoginGate>
   );
 }
