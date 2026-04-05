@@ -52,8 +52,8 @@ export function MarketMovers({ sectors, selectedSector }: MarketMoversProps) {
     );
   }
 
-  const sorted = [...sectors];
-  const topGainers: MoverItem[] = sorted
+  // NOTE: 현재 섹터 ETF 레벨 데이터만 표시. 개별 종목 데이터는 향후 API 확장 시 추가.
+  const topGainers: MoverItem[] = [...sectors]
     .sort((a, b) => b.change_percent - a.change_percent)
     .slice(0, 5)
     .map((s) => ({
@@ -86,7 +86,7 @@ export function MarketMovers({ sectors, selectedSector }: MarketMoversProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Market Movers — {selectedSector}</CardTitle>
+        <CardTitle>Sector Rankings — {selectedSector}</CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <MoverList title="Top Gainers" items={topGainers} />
