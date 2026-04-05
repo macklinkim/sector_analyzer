@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.health import router as health_router
+from app.api.routes.market import router as market_router
 
 app = FastAPI(
     title="Economi Analyzer API",
@@ -17,6 +18,7 @@ app.add_middleware(
 )
 
 app.include_router(health_router)
+app.include_router(market_router)
 
 
 @app.get("/")
