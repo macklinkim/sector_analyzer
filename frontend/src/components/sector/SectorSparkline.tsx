@@ -1,4 +1,5 @@
 import { Line, LineChart, ResponsiveContainer } from "recharts";
+import { getSectorLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { formatPercent, getChangeColor } from "@/lib/utils";
 import type { Sector } from "@/types";
@@ -45,7 +46,7 @@ export function SectorSparkline({ sectors, selectedSector, onSectorClick }: Sect
             <span className="w-10 font-mono text-xs text-muted-foreground">
               {sector.etf_symbol}
             </span>
-            <span className="font-medium text-foreground">{sector.name}</span>
+            <span className="font-medium text-foreground">{getSectorLabel(sector.etf_symbol) !== sector.etf_symbol ? `${getSectorLabel(sector.etf_symbol)}` : sector.name}</span>
           </div>
           <div className="flex items-center gap-3">
             <MiniSparkline positive={sector.change_percent >= 0} />

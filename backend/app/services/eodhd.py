@@ -19,6 +19,7 @@ INDEX_SYMBOLS = [
     ("S&P 500", "SPY"),
     ("NASDAQ", "QQQ"),
     ("DOW", "DIA"),
+    ("KOSDAQ", "2001.KO"),
 ]
 
 
@@ -66,13 +67,19 @@ class EODHDService:
     async def fetch_indices(self) -> list[dict]:
         results = []
         for name, symbol in INDEX_SYMBOLS:
-            quote = await self.fetch_realtime_quote(f"{symbol}.US")
-            results.append({
-                "symbol": symbol,
-                "name": name,
-                "close": quote.get("close", 0),
-                "change_p": quote.get("change_p", 0),
-            })
+            # Symbol already contains exchange suffix (e.g., "2001.KO") or needs ".US"
+            api_symbol = symbol if "." in symbol else f"{symbol}.US"
+            try:
+                quote = await self.fetch_realtime_quote(api_symbol)
+                results.append({
+                    "symbol": symbol.split(".")[0] if "." in symbol else symbol,
+                    "name": name,
+                    "close": quote.get("close", 0),
+                    "change_p": quote.get("change_p", 0),
+                })
+            except Exception:
+                # Skip unavailable indices (e.g., KOSDAQ during US hours)
+                pass
         return results
 
     async def calculate_momentum(self, symbol: str) -> dict:

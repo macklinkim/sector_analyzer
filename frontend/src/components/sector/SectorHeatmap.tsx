@@ -1,6 +1,7 @@
 import { Treemap, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getSectorLabel } from "@/lib/i18n";
 import { formatPercent } from "@/lib/utils";
 import type { Sector } from "@/types";
 
@@ -54,7 +55,7 @@ function CustomTreemapContent({ x, y, width, height, name, change_percent }: Tre
             fontSize={width > 100 ? 12 : 10}
             fontWeight="bold"
           >
-            {name}
+            {getSectorLabel(name)}
           </text>
           <text
             x={x + width / 2}

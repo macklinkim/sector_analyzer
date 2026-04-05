@@ -58,11 +58,11 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
     news_data = result.get("news_data")
     if news_data:
         now_str = datetime.utcnow().isoformat() + "Z"
-        for articles in news_data.articles_by_category.values():
+        for category_key, articles in news_data.articles_by_category.items():
             for a in articles:
                 try:
                     svc.insert_news_article(NewsArticle(
-                        category=a.get("category", "general"),
+                        category=category_key,
                         title=a.get("title", ""),
                         source=a.get("source", {}).get("name", "") if isinstance(a.get("source"), dict) else str(a.get("source", "")),
                         url=a.get("url", ""),

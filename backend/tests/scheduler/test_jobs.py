@@ -1,4 +1,5 @@
-from unittest.mock import MagicMock, patch
+import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.scheduler.jobs import create_scheduler, run_batch
 
@@ -6,20 +7,20 @@ from app.scheduler.jobs import create_scheduler, run_batch
 def test_run_batch_pre_market():
     with patch("app.scheduler.jobs.build_graph") as mock_build:
         mock_graph = MagicMock()
-        mock_graph.invoke.return_value = {"batch_type": "pre_market"}
+        mock_graph.ainvoke = AsyncMock(return_value={"batch_type": "pre_market"})
         mock_build.return_value = mock_graph
 
         result = run_batch("pre_market")
 
         mock_build.assert_called_once()
-        mock_graph.invoke.assert_called_once()
+        mock_graph.ainvoke.assert_called_once()
         assert result["batch_type"] == "pre_market"
 
 
 def test_run_batch_post_market():
     with patch("app.scheduler.jobs.build_graph") as mock_build:
         mock_graph = MagicMock()
-        mock_graph.invoke.return_value = {"batch_type": "post_market"}
+        mock_graph.ainvoke = AsyncMock(return_value={"batch_type": "post_market"})
         mock_build.return_value = mock_graph
 
         result = run_batch("post_market")

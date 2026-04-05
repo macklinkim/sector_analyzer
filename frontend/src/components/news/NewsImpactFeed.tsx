@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { getCategoryLabel } from "@/lib/i18n";
 import { ImpactCard } from "./ImpactCard";
 import type { NewsArticle, NewsImpactAnalysis } from "@/types";
 
@@ -11,16 +12,17 @@ interface NewsImpactFeedProps {
   loading: boolean;
 }
 
-const TABS = [
-  { key: "all", label: "전체" },
-  { key: "business", label: "경제" },
-  { key: "technology", label: "기술" },
-  { key: "science", label: "과학" },
-  { key: "general", label: "글로벌" },
-] as const;
-
 export function NewsImpactFeed({ articles, impacts, loading }: NewsImpactFeedProps) {
   const [activeTab, setActiveTab] = useState<string>("all");
+
+  // Derive tabs dynamically from actual article categories
+  const categorySet = new Set(articles.map((a) => a.category));
+  const tabs = [
+    { key: "all", label: getCategoryLabel("all") },
+    ...Array.from(categorySet)
+      .sort()
+      .map((cat) => ({ key: cat, label: getCategoryLabel(cat) })),
+  ];
 
   const filteredArticles =
     activeTab === "all"
@@ -33,8 +35,8 @@ export function NewsImpactFeed({ articles, impacts, loading }: NewsImpactFeedPro
     <Card className="flex h-full flex-col">
       <CardHeader className="pb-2">
         <CardTitle>News Impact Feed</CardTitle>
-        <div className="flex gap-1 pt-1">
-          {TABS.map((tab) => (
+        <div className="flex flex-wrap gap-1 pt-1">
+          {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}

@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSectorLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { formatCompactNumber, formatPercent, getChangeColor } from "@/lib/utils";
 import type { Sector } from "@/types";
@@ -58,7 +59,7 @@ export function MarketMovers({ sectors, selectedSector }: MarketMoversProps) {
     .slice(0, 5)
     .map((s) => ({
       symbol: s.etf_symbol,
-      name: s.name,
+      name: getSectorLabel(s.etf_symbol),
       value: formatPercent(s.change_percent),
       colorClass: getChangeColor(s.change_percent),
     }));
@@ -68,7 +69,7 @@ export function MarketMovers({ sectors, selectedSector }: MarketMoversProps) {
     .slice(0, 5)
     .map((s) => ({
       symbol: s.etf_symbol,
-      name: s.name,
+      name: getSectorLabel(s.etf_symbol),
       value: formatPercent(s.change_percent),
       colorClass: getChangeColor(s.change_percent),
     }));
@@ -78,7 +79,7 @@ export function MarketMovers({ sectors, selectedSector }: MarketMoversProps) {
     .slice(0, 5)
     .map((s) => ({
       symbol: s.etf_symbol,
-      name: s.name,
+      name: getSectorLabel(s.etf_symbol),
       value: formatCompactNumber(s.volume),
       colorClass: "text-foreground",
     }));

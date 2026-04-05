@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getSectorLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { getChangeColor } from "@/lib/utils";
 import type { SectorScoreboard } from "@/types";
@@ -60,7 +61,7 @@ export function AiScreenerTable({ scoreboards, loading }: AiScreenerTableProps) 
                     #{sb.rank}
                   </td>
                   <td className="px-2 py-2 font-medium text-foreground">
-                    {sb.sector_name}
+                    {getSectorLabel(sb.sector_name)}
                   </td>
                   <td className="px-2 py-2 font-mono text-xs text-muted-foreground">
                     {sb.etf_symbol}
