@@ -29,6 +29,22 @@ def get_regime(svc: SupabaseService = Depends(get_supabase)):
     return regime
 
 
+@router.get("/sector-history/{etf_symbol}")
+async def get_sector_history(etf_symbol: str, days: int = 7):
+    """Get historical price data for sparkline charts."""
+    from app.config import Settings
+    from app.services.eodhd import EODHDService
+
+    settings = Settings()
+    service = EODHDService(settings)
+    try:
+        history = await service.fetch_historical(f"{etf_symbol}.US", limit=days)
+        # Return oldest-first for chart rendering
+        return [{"date": d["date"], "close": d["close"]} for d in reversed(history)]
+    finally:
+        await service.close()
+
+
 @router.get("/sector-stocks/{etf_symbol}")
 async def get_sector_stocks(etf_symbol: str):
     from app.services.sector_stocks import SECTOR_CONSTITUENTS
