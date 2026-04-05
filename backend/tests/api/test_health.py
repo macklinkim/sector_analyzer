@@ -20,8 +20,12 @@ def test_health_check(client):
     assert "version" in data
 
 
-def test_root_redirects_or_returns_info(client):
+def test_root_returns_response(client):
     resp = client.get("/")
     assert resp.status_code == 200
-    data = resp.json()
-    assert "name" in data
+    # Either SPA HTML (frontend built) or JSON info (frontend not built)
+    content_type = resp.headers.get("content-type", "")
+    if "json" in content_type:
+        assert "name" in resp.json()
+    else:
+        assert "html" in resp.text.lower()
