@@ -1,7 +1,8 @@
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -10,6 +11,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getSectorLabel } from "@/lib/i18n";
 import type { Sector } from "@/types";
 
 interface RelativeStrengthProps {
@@ -21,24 +23,32 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
   if (loading) {
     return (
       <Card>
-        <CardHeader><CardTitle>Relative Strength vs S&P500</CardTitle></CardHeader>
+        <CardHeader><CardTitle>상대 강도 vs S&P500</CardTitle></CardHeader>
         <CardContent><Skeleton className="h-64 w-full" /></CardContent>
       </Card>
     );
   }
 
+  // Deduplicate by etf_symbol (keep first/latest), filter null/zero, sort descending
+  const seen = new Set<string>();
   const data = sectors
-    .filter((s) => s.relative_strength !== null && s.relative_strength !== 0)
+    .filter((s) => {
+      if (s.relative_strength === null || s.relative_strength === 0) return false;
+      if (seen.has(s.etf_symbol)) return false;
+      seen.add(s.etf_symbol);
+      return true;
+    })
     .sort((a, b) => (b.relative_strength ?? 0) - (a.relative_strength ?? 0))
     .map((s) => ({
-      name: s.etf_symbol,
-      rs: s.relative_strength ?? 0,
+      name: getSectorLabel(s.etf_symbol),
+      symbol: s.etf_symbol,
+      rs: Number((s.relative_strength ?? 0).toFixed(2)),
     }));
 
   if (data.length === 0) {
     return (
       <Card>
-        <CardHeader><CardTitle>Relative Strength vs S&P500</CardTitle></CardHeader>
+        <CardHeader><CardTitle>상대 강도 vs S&P500</CardTitle></CardHeader>
         <CardContent>
           <p className="py-8 text-center text-sm text-muted-foreground">
             상대 강도 데이터가 아직 없습니다
@@ -50,15 +60,21 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
 
   return (
     <Card>
-      <CardHeader><CardTitle>Relative Strength vs S&P500</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>상대 강도 vs S&P500</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          1개월 수익률 - SPY 수익률 (녹색: 초과, 적색: 하회)
+        </p>
+      </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={280}>
-          <AreaChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data} barSize={28} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
             <XAxis
               dataKey="name"
               tick={{ fill: "var(--color-muted-foreground)", fontSize: 10 }}
               axisLine={{ stroke: "var(--color-border)" }}
+              tickLine={false}
             />
             <YAxis
               tick={{ fill: "var(--color-muted-foreground)", fontSize: 10 }}
@@ -74,22 +90,18 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
                 fontSize: 12,
               }}
               formatter={(value) => [`${(value as number).toFixed(2)}%`, "RS"]}
+              labelFormatter={(label) => `${label}`}
             />
-            <ReferenceLine y={0} stroke="var(--color-muted-foreground)" strokeDasharray="3 3" />
-            <defs>
-              <linearGradient id="rsPositive" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-bullish)" stopOpacity={0.4} />
-                <stop offset="100%" stopColor="var(--color-bullish)" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <Area
-              type="monotone"
-              dataKey="rs"
-              stroke="var(--color-bullish)"
-              fill="url(#rsPositive)"
-              strokeWidth={2}
-            />
-          </AreaChart>
+            <ReferenceLine y={0} stroke="var(--color-muted-foreground)" strokeWidth={1.5} />
+            <Bar dataKey="rs" radius={[4, 4, 0, 0]}>
+              {data.map((entry) => (
+                <Cell
+                  key={entry.symbol}
+                  fill={entry.rs >= 0 ? "#22c55e" : "#ef4444"}
+                />
+              ))}
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>
