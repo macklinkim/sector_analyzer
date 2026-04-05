@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(node:*)",
+      "Bash(scoop install:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(export PATH=\"$HOME/scoop/shims:$PATH\")"
+    ]
+  }
+}
