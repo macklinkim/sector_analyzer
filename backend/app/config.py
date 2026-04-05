@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # EODHD
     eodhd_base_url: str = "https://eodhd.com/api"
 
+    # Trigger API Key (manual pipeline trigger protection)
+    trigger_api_key: str = ""
+
     # Playwright
     playwright_timeout_sec: int = 30
     playwright_max_instances: int = 2

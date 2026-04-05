@@ -9,6 +9,7 @@ def get_settings() -> Settings:
     return Settings()
 
 
+@lru_cache
 def get_supabase() -> SupabaseService:
     settings = get_settings()
     return SupabaseService(settings)

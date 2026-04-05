@@ -61,13 +61,31 @@ def test_get_rotation_signals(client, mock_supabase_svc):
     assert data[0]["signal_type"] == "rotate_in"
 
 
-def test_trigger_pipeline(client):
+def test_trigger_pipeline_with_valid_key(client, mock_settings):
+    mock_settings.trigger_api_key = "test-trigger-key"
     with patch("app.api.routes.analysis.run_pipeline") as mock_run:
         mock_run.return_value = {
             "status": "completed",
             "batch_type": "manual",
         }
-        response = client.post("/api/analysis/trigger")
+        response = client.post(
+            "/api/analysis/trigger",
+            headers={"X-API-Key": "test-trigger-key"},
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "completed"
+
+
+def test_trigger_pipeline_wrong_key(client, mock_settings):
+    mock_settings.trigger_api_key = "test-trigger-key"
+    response = client.post(
+        "/api/analysis/trigger",
+        headers={"X-API-Key": "wrong-key"},
+    )
+    assert response.status_code == 403
+
+
+def test_trigger_pipeline_missing_key(client):
+    response = client.post("/api/analysis/trigger")
+    assert response.status_code == 422

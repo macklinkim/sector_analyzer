@@ -1,10 +1,11 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 
 from app.agents.graph import build_graph
 from app.agents.state import create_initial_state
-from app.api.deps import get_supabase
+from app.api.deps import get_settings, get_supabase
+from app.config import Settings
 from app.services.supabase import SupabaseService
 
 logger = logging.getLogger(__name__)
@@ -41,10 +42,15 @@ def get_rotation_signals(svc: SupabaseService = Depends(get_supabase)):
 
 
 @router.post("/trigger")
-def trigger_pipeline():
+def trigger_pipeline(
+    x_api_key: str = Header(..., alias="X-API-Key"),
+    settings: Settings = Depends(get_settings),
+):
+    if not settings.trigger_api_key or x_api_key != settings.trigger_api_key:
+        raise HTTPException(status_code=403, detail="Forbidden")
     try:
         result = run_pipeline("manual")
         return result
     except Exception as e:
         logger.exception("Pipeline trigger failed")
-        raise HTTPException(status_code=500, detail=f"Pipeline failed: {e}")
+        raise HTTPException(status_code=500, detail="Pipeline execution failed")
