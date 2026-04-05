@@ -4,10 +4,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { getCategoryLabel } from "@/lib/i18n";
 import { ImpactCard } from "./ImpactCard";
-import type { NewsArticle, NewsImpactAnalysis } from "@/types";
+import type { NewsArticleEnriched, NewsImpactAnalysis } from "@/types";
 
 interface NewsImpactFeedProps {
-  articles: NewsArticle[];
+  articles: NewsArticleEnriched[];
   impacts: NewsImpactAnalysis[];
   loading: boolean;
 }

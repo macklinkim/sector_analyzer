@@ -4,6 +4,7 @@ import type {
   MarketIndex,
   MarketReport,
   NewsArticle,
+  NewsArticleEnriched,
   NewsImpactAnalysis,
   RotationSignal,
   Sector,
@@ -32,10 +33,14 @@ export const api = {
     params.set("limit", String(limit));
     return fetchJson<NewsArticle[]>(`/news/articles?${params}`);
   },
+  getNewsSummaries: (limit = 10) =>
+    fetchJson<NewsArticleEnriched[]>(`/news/summaries?limit=${limit}`),
   getNewsImpacts: () => fetchJson<NewsImpactAnalysis[]>("/news/impacts"),
 
   getReport: () => fetchJson<MarketReport>("/analysis/report"),
-  getScoreboards: (batchType = "pre_market") =>
-    fetchJson<SectorScoreboard[]>(`/analysis/scoreboards?batch_type=${batchType}`),
+  getScoreboards: (batchType?: string) => {
+    const params = batchType ? `?batch_type=${batchType}` : "";
+    return fetchJson<SectorScoreboard[]>(`/analysis/scoreboards${params}`);
+  },
   getSignals: () => fetchJson<RotationSignal[]>("/analysis/signals"),
 };

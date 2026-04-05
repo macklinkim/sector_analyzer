@@ -1,10 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getImpactColor } from "@/lib/utils";
-import type { NewsArticle, NewsImpactAnalysis } from "@/types";
+import type { NewsArticleEnriched, NewsImpactAnalysis } from "@/types";
 
 interface ImpactCardProps {
-  article: NewsArticle;
+  article: NewsArticleEnriched;
   impact?: NewsImpactAnalysis;
 }
 
@@ -15,6 +15,13 @@ function timeAgo(dateStr: string): string {
   if (hours < 24) return `${hours}시간 전`;
   const days = Math.floor(hours / 24);
   return `${days}일 전`;
+}
+
+function getImpactLabelColor(label: string | null): string {
+  if (!label) return "text-muted-foreground";
+  if (label === "긍정") return "text-bullish";
+  if (label === "부정") return "text-bearish";
+  return "text-muted-foreground";
 }
 
 export function ImpactCard({ article, impact }: ImpactCardProps) {
@@ -35,29 +42,41 @@ export function ImpactCard({ article, impact }: ImpactCardProps) {
             <span>·</span>
             <span>{timeAgo(article.published_at)}</span>
           </div>
-          {article.summary && (
+          {/* Korean AI Summary */}
+          {article.summary_ko && (
+            <p className="mt-1.5 text-xs leading-relaxed text-card-foreground">
+              {article.summary_ko}
+              {article.impact_label && (
+                <span className={cn("ml-1 font-medium", getImpactLabelColor(article.impact_label))}>
+                  [{article.impact_label} {article.impact_score}/10
+                  {article.related_sector ? ` · ${article.related_sector}` : ""}]
+                </span>
+              )}
+            </p>
+          )}
+          {/* Fallback: English summary if no Korean */}
+          {!article.summary_ko && article.summary && (
             <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
               {article.summary}
             </p>
           )}
         </div>
 
-        {impact && (
+        {(impact || article.impact_score > 0) && (
           <div className="flex shrink-0 flex-col items-end gap-1">
             <span
               className={cn(
                 "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold",
-                getImpactColor(impact.impact_score),
+                getImpactColor(impact?.impact_score ?? article.impact_score),
               )}
             >
-              {impact.impact_score}
+              {impact?.impact_score ?? article.impact_score}
             </span>
-            <Badge
-              variant={impact.impact_direction === "positive" ? "bullish" : "bearish"}
-              className="text-[10px]"
-            >
-              {impact.sector_name}
-            </Badge>
+            {article.related_sector && (
+              <Badge variant="default" className="text-[10px]">
+                {article.related_sector}
+              </Badge>
+            )}
           </div>
         )}
       </div>

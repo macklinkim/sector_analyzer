@@ -6,6 +6,7 @@ import { GlobalMacroHeader } from "@/components/header/GlobalMacroHeader";
 import { SectorHeatmap } from "@/components/sector/SectorHeatmap";
 import { SectorSparkline } from "@/components/sector/SectorSparkline";
 import { MarketMovers } from "@/components/sector/MarketMovers";
+import { SectorStockTreemap } from "@/components/sector/SectorStockTreemap";
 import { NewsImpactFeed } from "@/components/news/NewsImpactFeed";
 import { EconomicCalendar } from "@/components/news/EconomicCalendar";
 import { MultiChartGrid } from "@/components/chart/MultiChartGrid";
@@ -16,6 +17,7 @@ export default function App() {
   const newsData = useNewsData();
   const analysisData = useAnalysisData();
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
+  const selectedEtf = marketData.sectors.find((s) => s.name === selectedSector)?.etf_symbol ?? null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -47,6 +49,10 @@ export default function App() {
           <MarketMovers
             sectors={marketData.sectors}
             selectedSector={selectedSector}
+          />
+          <SectorStockTreemap
+            selectedSector={selectedSector}
+            etfSymbol={selectedEtf}
           />
         </div>
 

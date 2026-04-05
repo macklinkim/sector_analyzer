@@ -48,6 +48,13 @@ export interface NewsArticle {
   collected_at: string;
 }
 
+export interface NewsArticleEnriched extends NewsArticle {
+  summary_ko: string | null;
+  impact_label: string | null;
+  impact_score: number;
+  related_sector: string | null;
+}
+
 export interface NewsImpactAnalysis {
   news_url: string;
   sector_name: string;

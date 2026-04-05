@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { NewsArticle, NewsImpactAnalysis } from "@/types";
+import type { NewsArticleEnriched, NewsImpactAnalysis } from "@/types";
 
 interface NewsData {
-  articles: NewsArticle[];
+  articles: NewsArticleEnriched[];
   impacts: NewsImpactAnalysis[];
   loading: boolean;
   error: string | null;
 }
 
-export function useNewsData(category?: string): NewsData & { refresh: () => void } {
+export function useNewsData(): NewsData & { refresh: () => void } {
   const [data, setData] = useState<NewsData>({
     articles: [],
     impacts: [],
@@ -21,7 +21,7 @@ export function useNewsData(category?: string): NewsData & { refresh: () => void
     setData((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const [articles, impacts] = await Promise.all([
-        api.getNewsArticles(category),
+        api.getNewsSummaries(15),
         api.getNewsImpacts(),
       ]);
       setData({ articles, impacts, loading: false, error: null });
@@ -32,7 +32,7 @@ export function useNewsData(category?: string): NewsData & { refresh: () => void
         error: err instanceof Error ? err.message : "Failed to fetch news",
       }));
     }
-  }, [category]);
+  }, []);
 
   useEffect(() => {
     fetchData();
