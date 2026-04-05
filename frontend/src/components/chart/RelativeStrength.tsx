@@ -28,12 +28,25 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
   }
 
   const data = sectors
-    .filter((s) => s.relative_strength !== null)
+    .filter((s) => s.relative_strength !== null && s.relative_strength !== 0)
     .sort((a, b) => (b.relative_strength ?? 0) - (a.relative_strength ?? 0))
     .map((s) => ({
       name: s.etf_symbol,
       rs: s.relative_strength ?? 0,
     }));
+
+  if (data.length === 0) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>Relative Strength vs S&P500</CardTitle></CardHeader>
+        <CardContent>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            상대 강도 데이터가 아직 없습니다
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

@@ -84,9 +84,9 @@ class EODHDService:
         return results
 
     async def calculate_momentum(self, symbol: str) -> dict:
-        history = await self.fetch_historical(symbol, limit=180)
+        history = await self.fetch_historical(symbol, limit=260)
         if not history:
-            return {"momentum_1w": 0, "momentum_1m": 0, "momentum_3m": 0, "momentum_6m": 0}
+            return {"momentum_1w": 0, "momentum_1m": 0, "momentum_3m": 0, "momentum_6m": 0, "momentum_1y": 0}
 
         current = history[0]["close"]
 
@@ -100,6 +100,7 @@ class EODHDService:
             "momentum_1m": pct(min(22, len(history) - 1)),
             "momentum_3m": pct(min(66, len(history) - 1)),
             "momentum_6m": pct(min(132, len(history) - 1)),
+            "momentum_1y": pct(min(252, len(history) - 1)),
         }
 
     async def close(self) -> None:

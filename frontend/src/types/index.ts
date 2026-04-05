@@ -23,6 +23,7 @@ export interface Sector {
   momentum_1m: number | null;
   momentum_3m: number | null;
   momentum_6m: number | null;
+  momentum_1y: number | null;
   rs_rank: number | null;
   collected_at: string;
 }
