@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # Trigger API Key (manual pipeline trigger protection)
     trigger_api_key: str = ""
 
+    # CORS: comma-separated allowed origins (added to defaults)
+    cors_origins: str = ""
+
     # Simple auth: comma-separated allowed names
     allowed_users: str = "admin"
 

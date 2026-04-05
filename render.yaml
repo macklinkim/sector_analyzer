@@ -16,4 +16,6 @@ services:
         sync: false
       - key: TRIGGER_API_KEY
         sync: false
+      - key: ALLOWED_USERS
+        sync: false
     healthCheckPath: /health
