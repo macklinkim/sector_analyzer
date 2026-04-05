@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "npx",
+      "args": ["@anthropic-ai/fetch-mcp"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@anthropic-ai/playwright-mcp"]
+    }
+  }
+}
