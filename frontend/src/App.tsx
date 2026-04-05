@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAnalysisData } from "@/hooks/useAnalysisData";
 import { useMarketData } from "@/hooks/useMarketData";
 import { useNewsData } from "@/hooks/useNewsData";
 import { GlobalMacroHeader } from "@/components/header/GlobalMacroHeader";
@@ -7,10 +8,13 @@ import { SectorSparkline } from "@/components/sector/SectorSparkline";
 import { MarketMovers } from "@/components/sector/MarketMovers";
 import { NewsImpactFeed } from "@/components/news/NewsImpactFeed";
 import { EconomicCalendar } from "@/components/news/EconomicCalendar";
+import { MultiChartGrid } from "@/components/chart/MultiChartGrid";
+import { AiScreenerTable } from "@/components/screener/AiScreenerTable";
 
 export default function App() {
   const marketData = useMarketData();
   const newsData = useNewsData();
+  const analysisData = useAnalysisData();
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
 
   return (
@@ -61,11 +65,16 @@ export default function App() {
       </main>
 
       {/* Area D: Deep Dive & Screener */}
-      <section className="mx-4 mb-4 rounded-xl border border-border bg-card p-4">
-        <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
-          Interactive Deep Dive & AI Screener
-        </h2>
-        <p className="text-xs text-muted-foreground">Phase 4c에서 구현</p>
+      <section className="space-y-4 px-4 pb-4">
+        <MultiChartGrid
+          sectors={marketData.sectors}
+          signals={analysisData.signals}
+          loading={marketData.loading}
+        />
+        <AiScreenerTable
+          scoreboards={analysisData.scoreboards}
+          loading={analysisData.loading}
+        />
       </section>
 
       {/* Disclaimer */}

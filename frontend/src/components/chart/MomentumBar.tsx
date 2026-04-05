@@ -59,7 +59,7 @@ export function MomentumBar({ sectors, loading }: MomentumBarProps) {
                 color: "var(--color-foreground)",
                 fontSize: 12,
               }}
-              formatter={(value: number) => [`${value.toFixed(2)}%`]}
+              formatter={(value) => [`${(value as number).toFixed(2)}%`]}
             />
             <Legend wrapperStyle={{ fontSize: 11, color: "var(--color-muted-foreground)" }} />
             <Bar dataKey="1W" fill="#60a5fa" radius={[2, 2, 0, 0]} />

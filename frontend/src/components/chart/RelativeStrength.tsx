@@ -60,7 +60,7 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
                 color: "var(--color-foreground)",
                 fontSize: 12,
               }}
-              formatter={(value: number) => [`${value.toFixed(2)}%`, "RS"]}
+              formatter={(value) => [`${(value as number).toFixed(2)}%`, "RS"]}
             />
             <ReferenceLine y={0} stroke="var(--color-muted-foreground)" strokeDasharray="3 3" />
             <defs>
