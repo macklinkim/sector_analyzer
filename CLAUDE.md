@@ -29,10 +29,16 @@ economi_analyzer/
 │   └── tests/
 ├── frontend/          # Next.js 대시보드
 │   └── src/
-│       ├── app/       # Next.js App Router
-│       ├── components/# UI 컴포넌트
-│       ├── lib/       # 유틸리티
-│       └── types/     # TypeScript 타입
+│       ├── app/           # Next.js App Router
+│       ├── components/
+│       │   ├── header/    # GlobalMacroHeader, TickerBar, RegimeBadge
+│       │   ├── sector/    # SectorHeatmap, SectorSparkline, MarketMovers
+│       │   ├── news/      # NewsImpactFeed, ImpactCard, EconomicCalendar
+│       │   ├── chart/     # MultiChartGrid, PriceChart, RelativeStrength, MomentumBar, RangeChart, EventMarker
+│       │   ├── screener/  # AiScreenerTable
+│       │   └── ui/        # Skeleton 등 공통 UI
+│       ├── lib/           # api.ts, utils.ts
+│       └── types/         # TypeScript 타입
 └── docs/              # 설계 문서, 전략 가이드
 ```
 
@@ -45,6 +51,8 @@ economi_analyzer/
 - **NewsAPI 한도 관리**: 배치 캐싱 + Google News RSS fallback
 - **도구 이원화**: Fast Track(API) / Heavy Track(Playwright MCP) 엄격 분리
 - **Claude Vision**: Playwright 스크린샷 기반 차트/히트맵 실시간 시각 분석
+- **대시보드 4 Area 구조**: A(Macro Header) + B(Sector Heatmap/Movers) + C(News/Calendar) + D(Deep Dive Chart/Screener)
+- **차트**: Recharts + TradingView Lightweight Charts (선택), Multi-Chart Grid 2~4분할
 
 ## Important References
 

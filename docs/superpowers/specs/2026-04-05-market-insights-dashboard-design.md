@@ -63,18 +63,33 @@ economi_analyzer/
 ├── frontend/
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── layout.tsx       # 루트 레이아웃 (Dark Mode)
-│   │   │   ├── page.tsx         # 대시보드 메인
+│   │   │   ├── layout.tsx                    # 루트 레이아웃 (Dark Mode)
+│   │   │   ├── page.tsx                      # 대시보드 메인 (4 Area 그리드)
 │   │   │   └── globals.css
 │   │   ├── components/
-│   │   │   ├── header/GlobalHeader.tsx
-│   │   │   ├── sector/SectorHeatmap.tsx
-│   │   │   ├── sector/SectorTrend.tsx
-│   │   │   ├── news/NewsRadar.tsx
-│   │   │   ├── news/ImpactCard.tsx
-│   │   │   ├── rotation/RotationSignals.tsx
-│   │   │   ├── chart/DeepDiveChart.tsx
-│   │   │   └── ui/Skeleton.tsx
+│   │   │   ├── header/
+│   │   │   │   ├── GlobalMacroHeader.tsx     # Area A: 전체 헤더
+│   │   │   │   ├── TickerBar.tsx             # 지수 + 거시지표 횡렬 티커
+│   │   │   │   └── RegimeBadge.tsx           # 현재 국면 배지
+│   │   │   ├── sector/
+│   │   │   │   ├── SectorHeatmap.tsx         # Area B: Treemap/Grid 히트맵
+│   │   │   │   ├── SectorSparkline.tsx       # 리스트 뷰 + 30일 스파크라인
+│   │   │   │   └── MarketMovers.tsx          # 섹터 내 급등/급락/거래량 Top5
+│   │   │   ├── news/
+│   │   │   │   ├── NewsImpactFeed.tsx        # Area C: 탭 뉴스 피드
+│   │   │   │   ├── ImpactCard.tsx            # 뉴스 카드 + Impact Score 뱃지
+│   │   │   │   └── EconomicCalendar.tsx      # 경제 캘린더 위젯
+│   │   │   ├── chart/
+│   │   │   │   ├── MultiChartGrid.tsx        # Area D: 2~4분할 차트 컨테이너
+│   │   │   │   ├── PriceChart.tsx            # 가격 차트 + MA/Vol 토글
+│   │   │   │   ├── RelativeStrength.tsx      # Baseline Area (S&P500 기준)
+│   │   │   │   ├── MomentumBar.tsx           # Grouped Bar (1D/1W/1M)
+│   │   │   │   ├── RangeChart.tsx            # 52주 Bullet Chart
+│   │   │   │   └── EventMarker.tsx           # AI 이벤트 마커 오버레이
+│   │   │   ├── screener/
+│   │   │   │   └── AiScreenerTable.tsx       # AI Top Picks 테이블
+│   │   │   └── ui/
+│   │   │       └── Skeleton.tsx              # 스켈레톤 로딩
 │   │   ├── lib/
 │   │   │   ├── api.ts
 │   │   │   └── utils.ts
@@ -152,25 +167,107 @@ economi_analyzer/
 
 ## 5. 프론트엔드 대시보드 레이아웃
 
+### 5.1 전체 레이아웃 (SPA, 4개 Area)
+
 ```
-┌──────────────────────────────────────────────────┐
-│  Global Header                                    │
-│  [S&P500 +0.5%] [NASDAQ +0.8%] [DOW +0.3%]      │
-│  현재 국면: Goldilocks (60%)  갱신: 08:30 ET      │
-├────────────────────┬─────────────────────────────┤
-│  Sector Heatmap    │  News Impact Radar           │
-│  & Rotation Signal │  [정치|경제|사회|글로벌] 탭    │
-│                    │                              │
-│  Treemap +         │  뉴스 목록 + Impact Card     │
-│  유입/유출 화살표   │  (점수, 방향, 근거)           │
-│  AI 요약 텍스트    │                              │
-├────────────────────┴─────────────────────────────┤
-│  Sector Scoreboard                                │
-│  [섹터별 Final Score 바 차트 + Overweight/Under]   │
-├──────────────────────────────────────────────────┤
-│  Deep Dive Chart                                  │
-│  인터랙티브 가격 차트 + 뉴스 마커 + 국면 배경색     │
-└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  [A] Global Macro Header                                  │
+│  S&P500 +0.5% │ NASDAQ +0.8% │ DOW +0.3%                │
+│  US10Y 4.25%  │ DXY 104.2    │ WTI $78.5 │ Gold $2320   │
+│  현재 국면: Goldilocks (60%)   갱신: 08:30 ET  AI분석중... │
+├─────────────────────────┬────────────────────────────────┤
+│  [B] Sector Heatmap     │  [C] News Impact & Calendar     │
+│  & Market Movers        │                                 │
+│                         │  뉴스 탭 [정치|경제|사회|글로벌]   │
+│  Treemap/Grid           │  뉴스카드 + Impact Score 뱃지    │
+│  + 30일 Sparklines      │                                 │
+│                         │  ─────────────────────────      │
+│  클릭 시 →              │  경제 캘린더 위젯                 │
+│  Market Movers 리스트   │  (CPI, FOMC 등 이번주 일정)      │
+│  (급등/급락/거래량 Top5) │                                 │
+├─────────────────────────┴────────────────────────────────┤
+│  [D] Interactive Deep Dive & AI Screener                  │
+│                                                           │
+│  Multi-Chart Grid (2~4분할)                               │
+│  ┌─────────────┬─────────────┐                           │
+│  │ 지수 차트    │ 섹터 차트    │  + AI 이벤트 마커 오버레이 │
+│  │ +MA/Vol 토글 │ +상대강도    │  + 52주 레인지 Bullet     │
+│  └─────────────┴─────────────┘                           │
+│                                                           │
+│  AI Top Picks Screener Table (확장 패널)                   │
+│  티커 │ 종목명 │ AI점수 │ PER │ ROE │ FCF │ 1M등락률      │
+└──────────────────────────────────────────────────────────┘
+```
+
+### 5.2 Area별 상세
+
+**Area A: Global Macro Header**
+- 실시간 티커 바: 주요 지수(S&P500, NASDAQ, DOW) + 거시 지표(US 10Y, DXY, WTI, Gold) 횡렬 배치
+- 상태 표시: 마지막 갱신 시간 + AI 분석 진행 상태
+- 현재 매크로 국면 배지 (Goldilocks/Reflation/Stagflation/Deflation + 확률%)
+
+**Area B: Sector Heatmap & Market Movers**
+- 섹터 히트맵: 11개 섹터 등락률을 Treemap 또는 Grid로 시각화 (크기=시가총액, 색상=등락률)
+- 스파크라인: 리스트 뷰에서 각 섹터 옆 최근 30일 미니 선형 차트
+- Market Movers: 섹터 클릭 시 하단에 해당 섹터 내 급등주/급락주/최다거래량 Top 5 리스트 전환
+
+**Area C: News Impact & Macro Calendar**
+- AI 뉴스 피드: 정치/경제/사회/글로벌 탭, Impact Score(1~10) 뱃지
+- 경제 캘린더 위젯: 이번 주 핵심 지표 발표 일정 (CPI, FOMC 등) 미니 달력/타임라인
+
+**Area D: Interactive Deep Dive & AI Screener**
+- Multi-Chart Grid: 화면 2~4분할, 지수/섹터/거시지표 동시 렌더링
+- AI 이벤트 마커: 차트 X축에 경제 지표 발표일/핵심 뉴스 시점 아이콘 오버레이 (클릭 시 툴팁)
+- AI Top Picks 스크리너: 현재 매크로 국면 기반 최우선 종목 테이블 (티커, AI점수, PER, ROE, FCF, 1M등락률)
+
+### 5.3 차트 컴포넌트 상세 요구사항
+
+| 차트 유형 | 용도 | 구현 |
+|-----------|------|------|
+| **Grouped Bar** | 섹터별 1D/1W/1M 등락률 비교 | 묶음 막대형 |
+| **52주 Range (Bullet)** | 52주 최저~최고 내 현재 위치 표시 | Bullet Chart |
+| **Relative Strength (Baseline Area)** | S&P500 대비 섹터 초과/하회 수익 | Area Chart (0선 기준 채색) |
+| **Treemap** | 섹터 히트맵 (크기=시총, 색=등락률) | Recharts Treemap |
+| **Sparkline** | 섹터 리스트 내 30일 미니 추세 | 미니 Line Chart |
+| **보조지표 오버레이** | MA(이동평균), Volume 바 On/Off 토글 | 차트 위젯 내 토글 컨트롤 |
+
+### 5.4 컴포넌트 트리
+
+```
+frontend/src/
+├── app/
+│   ├── layout.tsx              # 루트 레이아웃 (Dark Mode)
+│   ├── page.tsx                # 대시보드 메인 (4 Area 그리드)
+│   └── globals.css
+├── components/
+│   ├── header/
+│   │   ├── GlobalMacroHeader.tsx   # Area A: 티커 바 + 거시 지표
+│   │   ├── TickerBar.tsx           # 지수/거시 지표 횡렬 티커
+│   │   └── RegimeBadge.tsx         # 현재 국면 배지
+│   ├── sector/
+│   │   ├── SectorHeatmap.tsx       # Area B: Treemap/Grid 히트맵
+│   │   ├── SectorSparkline.tsx     # 리스트 뷰 + 30일 스파크라인
+│   │   └── MarketMovers.tsx        # 섹터 내 급등/급락/거래량 Top5
+│   ├── news/
+│   │   ├── NewsImpactFeed.tsx      # Area C: 탭 뉴스 피드
+│   │   ├── ImpactCard.tsx          # 뉴스 카드 + Impact Score 뱃지
+│   │   └── EconomicCalendar.tsx    # 경제 캘린더 위젯
+│   ├── chart/
+│   │   ├── MultiChartGrid.tsx      # Area D: 2~4분할 차트 컨테이너
+│   │   ├── PriceChart.tsx          # 가격 차트 + MA/Vol 토글
+│   │   ├── RelativeStrength.tsx    # Baseline Area (S&P500 기준)
+│   │   ├── MomentumBar.tsx         # Grouped Bar (1D/1W/1M)
+│   │   ├── RangeChart.tsx          # 52주 Bullet Chart
+│   │   └── EventMarker.tsx         # AI 이벤트 마커 오버레이
+│   ├── screener/
+│   │   └── AiScreenerTable.tsx     # AI Top Picks 테이블
+│   └── ui/
+│       └── Skeleton.tsx            # 스켈레톤 로딩
+├── lib/
+│   ├── api.ts                  # FastAPI 클라이언트
+│   └── utils.ts                # 포맷터, 색상 헬퍼
+└── types/
+    └── index.ts                # 공유 타입
 ```
 
 ---
@@ -178,10 +275,15 @@ economi_analyzer/
 ## 6. 디자인 가이드
 
 - **테마:** Dark Mode 기본
-- **색상:** 상승 `#22c55e`, 하락 `#ef4444`, 배경 `#0f172a`
+- **배경:** `#0f172a` (딥 그레이/블랙)
+- **색상 팔레트:**
+  - 상승(Bullish): `#22c55e` (Green)
+  - 하락(Bearish): `#ef4444` (Red)
+  - 텍스트: White + 밝은 Gray
 - **국면 색상:** Goldilocks `#22c55e`, Reflation `#f59e0b`, Stagflation `#ef4444`, Deflation `#3b82f6`
-- **UI:** 카드 레이아웃, 스켈레톤 로딩, 반응형
-- **차트:** Recharts (Treemap, BarChart, AreaChart)
+- **UI 원칙:** 카드(Card) 레이아웃, Skeleton UI 로딩, 반응형
+- **차트 라이브러리:** Recharts 기본 + TradingView Lightweight Charts (인터랙티브 가격 차트용 선택)
+- **컴포넌트:** shadcn/ui 기반, Tailwind CSS
 
 ---
 
