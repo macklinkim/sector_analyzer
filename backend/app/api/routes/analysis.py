@@ -132,10 +132,20 @@ def get_report(svc: SupabaseService = Depends(get_supabase)):
 
 @router.get("/scoreboards")
 def get_scoreboards(
-    batch_type: str = Query("pre_market", description="Batch type: pre_market or post_market"),
+    batch_type: str | None = Query(None, description="Batch type filter (optional)"),
     svc: SupabaseService = Depends(get_supabase),
 ):
-    return svc.get_latest_scoreboards(batch_type)
+    if batch_type:
+        return svc.get_latest_scoreboards(batch_type)
+    # No filter: return most recent scoreboards regardless of batch_type
+    result = (
+        svc.client.table("sector_scoreboards")
+        .select("*")
+        .order("scored_at", desc=True)
+        .limit(12)
+        .execute()
+    )
+    return result.data
 
 
 @router.get("/signals")

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getSectorLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/utils";
 import type { Sector } from "@/types";
@@ -17,8 +18,8 @@ function BulletBar({ sector }: { sector: Sector }) {
 
   return (
     <div className="flex items-center gap-3 py-1">
-      <span className="w-10 shrink-0 font-mono text-xs text-muted-foreground">
-        {sector.etf_symbol}
+      <span className="w-14 shrink-0 text-xs text-muted-foreground">
+        {getSectorLabel(sector.etf_symbol)}
       </span>
       <span className="w-14 shrink-0 text-right font-mono text-xs text-muted-foreground">
         {formatPrice(low52)}
