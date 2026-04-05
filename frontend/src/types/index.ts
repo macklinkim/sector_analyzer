@@ -126,6 +126,18 @@ export interface MarketReport {
   disclaimer: string;
 }
 
+// --- Global Crisis Types ---
+
+export interface GlobalCrisis {
+  title: string;
+  source: string;
+  time_ago: string;
+  summary: string;
+  impact_score: number;
+  affected_sector: string;
+  sentiment: "negative" | "neutral" | "positive";
+}
+
 // --- Sparkline Types ---
 
 export interface SparkPoint {

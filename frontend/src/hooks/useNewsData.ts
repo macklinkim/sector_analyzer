@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { NewsArticleEnriched, NewsImpactAnalysis } from "@/types";
+import type { GlobalCrisis, NewsArticleEnriched, NewsImpactAnalysis } from "@/types";
 
 interface NewsData {
   articles: NewsArticleEnriched[];
   impacts: NewsImpactAnalysis[];
+  crises: GlobalCrisis[];
   loading: boolean;
   error: string | null;
 }
@@ -13,6 +14,7 @@ export function useNewsData(): NewsData & { refresh: () => void } {
   const [data, setData] = useState<NewsData>({
     articles: [],
     impacts: [],
+    crises: [],
     loading: true,
     error: null,
   });
@@ -20,11 +22,12 @@ export function useNewsData(): NewsData & { refresh: () => void } {
   const fetchData = useCallback(async () => {
     setData((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const [articles, impacts] = await Promise.all([
+      const [articles, impacts, crises] = await Promise.all([
         api.getNewsSummaries(15),
         api.getNewsImpacts(),
+        api.getGlobalCrises().catch(() => []),
       ]);
-      setData({ articles, impacts, loading: false, error: null });
+      setData({ articles, impacts, crises, loading: false, error: null });
     } catch (err) {
       setData((prev) => ({
         ...prev,

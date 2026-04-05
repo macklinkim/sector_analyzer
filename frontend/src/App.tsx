@@ -63,6 +63,7 @@ function Dashboard() {
           <NewsImpactFeed
             articles={newsData.articles}
             impacts={newsData.impacts}
+            crises={newsData.crises}
             loading={newsData.loading}
           />
           <EconomicCalendar

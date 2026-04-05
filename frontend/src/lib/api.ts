@@ -1,5 +1,6 @@
 import type {
   EconomicIndicator,
+  GlobalCrisis,
   MacroRegime,
   MarketIndex,
   MarketReport,
@@ -47,4 +48,6 @@ export const api = {
 
   getSectorsWithHistory: (days = 30) =>
     fetchJson<SectorWithHistory[]>(`/market/sectors-with-history?days=${days}`),
+
+  getGlobalCrises: () => fetchJson<GlobalCrisis[]>("/news/crises"),
 };

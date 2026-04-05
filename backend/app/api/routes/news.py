@@ -80,3 +80,31 @@ async def get_news_summaries(limit: int = Query(10, ge=1, le=20)):
         })
 
     return result
+
+
+@router.get("/crises")
+async def get_global_crises():
+    """Fetch ongoing global crises, filtered by AI for market impact."""
+    import json as _json
+
+    from app.config import Settings
+    from app.services.reliefweb import fetch_current_crises, filter_crises_with_ai
+
+    # Check localStorage-style server cache (in-memory for simplicity)
+    cache_key = "_crises_cache"
+    cache = getattr(get_global_crises, cache_key, None)
+    if cache:
+        ts, data = cache
+        import time
+        if time.time() - ts < 3600:  # 1 hour cache
+            return data
+
+    settings = Settings()
+    raw = await fetch_current_crises(limit=20)
+    filtered = await filter_crises_with_ai(raw, settings)
+
+    # Cache result
+    import time
+    setattr(get_global_crises, cache_key, (time.time(), filtered))
+
+    return filtered
