@@ -10,10 +10,10 @@ interface TickerBarProps {
 }
 
 const INDICATOR_DISPLAY: Record<string, { label: string; prefix?: string }> = {
-  US10Y: { label: "US10Y" },
-  DXY: { label: "DXY" },
-  WTI: { label: "WTI", prefix: "$" },
-  GOLD: { label: "Gold", prefix: "$" },
+  "US 10Y Treasury": { label: "US10Y" },
+  "DXY Dollar Index": { label: "DXY" },
+  "WTI Crude Oil": { label: "WTI", prefix: "$" },
+  Gold: { label: "Gold", prefix: "$" },
 };
 
 export function TickerBar({ indices, indicators, loading }: TickerBarProps) {
@@ -49,12 +49,19 @@ export function TickerBar({ indices, indicators, loading }: TickerBarProps) {
       {indicators.map((ind) => {
         const display = INDICATOR_DISPLAY[ind.indicator_name];
         if (!display) return null;
+        const dirColor = ind.change_direction === "up"
+          ? "text-bullish"
+          : ind.change_direction === "down"
+            ? "text-bearish"
+            : "text-muted-foreground";
+        const arrow = ind.change_direction === "up" ? "▲" : ind.change_direction === "down" ? "▼" : "";
         return (
           <div key={ind.indicator_name} className="flex items-center gap-1.5 text-sm">
             <span className="text-muted-foreground">{display.label}</span>
             <span className="font-medium text-foreground">
               {display.prefix ?? ""}{formatPrice(ind.value)}
             </span>
+            {arrow && <span className={`text-xs ${dirColor}`}>{arrow}</span>}
           </div>
         );
       })}

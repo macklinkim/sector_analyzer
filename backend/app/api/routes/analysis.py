@@ -50,11 +50,26 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
                     momentum_3m=mom.get("momentum_3m"),
                     momentum_6m=mom.get("momentum_6m"),
                     momentum_1y=mom.get("momentum_1y"),
+                    relative_strength=market_data.relative_strength.get(sec.get("symbol", "")),
                     collected_at=now_str,
                 ))
                 saved["sectors"] += 1
             except Exception as e:
                 logger.warning("Failed to save sector: %s", e)
+
+        for ind in market_data.economic_indicators:
+            try:
+                svc.insert_economic_indicator(EconomicIndicator(
+                    indicator_name=ind["indicator_name"],
+                    value=ind["value"],
+                    previous_value=ind.get("previous_value"),
+                    change_direction=ind.get("change_direction", "flat"),
+                    source=ind.get("source", "EODHD"),
+                    reported_at=now_str,
+                ))
+                saved["indicators"] = saved.get("indicators", 0) + 1
+            except Exception as e:
+                logger.warning("Failed to save indicator: %s", e)
 
     news_data = result.get("news_data")
     if news_data:

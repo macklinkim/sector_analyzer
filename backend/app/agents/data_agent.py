@@ -28,7 +28,15 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
         indices = await service.fetch_indices()
         sectors = await service.fetch_sector_etfs()
 
+        # Fetch macro economic indicators
+        try:
+            economic_indicators = await service.fetch_economic_indicators()
+        except Exception as e:
+            logger.warning("Failed to fetch economic indicators: %s", e)
+            economic_indicators = []
+
         momentum = {}
+        relative_strength = {}
         for sector in sectors:
             symbol = f"{sector['symbol']}.US"
             try:
@@ -37,8 +45,20 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
             except Exception as e:
                 logger.warning("Failed to calculate momentum for %s: %s", symbol, e)
                 momentum[sector["symbol"]] = {"momentum_1w": 0, "momentum_1m": 0, "momentum_3m": 0, "momentum_6m": 0, "momentum_1y": 0}
+            try:
+                rs = await service.calculate_relative_strength(symbol)
+                relative_strength[sector["symbol"]] = rs
+            except Exception as e:
+                logger.warning("Failed to calculate RS for %s: %s", symbol, e)
+                relative_strength[sector["symbol"]] = 0.0
 
-        market_data = MarketData(indices=indices, sectors=sectors, economic_indicators=[], momentum=momentum)
+        market_data = MarketData(
+            indices=indices,
+            sectors=sectors,
+            economic_indicators=economic_indicators,
+            momentum=momentum,
+            relative_strength=relative_strength,
+        )
         logger.info("Data Agent: collected %d indices, %d sectors", len(indices), len(sectors))
         return {"market_data": market_data}
     except Exception as e:

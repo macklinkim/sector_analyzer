@@ -23,6 +23,14 @@ INDEX_SYMBOLS = [
     ("KOSDAQ", "2001.KO"),
 ]
 
+# 거시 경제 지표 심볼 (EODHD)
+MACRO_INDICATORS = [
+    ("US 10Y Treasury", "US10Y.INDX"),
+    ("DXY Dollar Index", "DX-Y.NYB"),
+    ("WTI Crude Oil", "CL.COMM"),
+    ("Gold", "GC.COMM"),
+]
+
 
 class EODHDService:
     def __init__(self, settings: Settings) -> None:
@@ -102,6 +110,42 @@ class EODHDService:
             "momentum_6m": pct(min(132, len(history) - 1)),
             "momentum_1y": pct(min(252, len(history) - 1)),
         }
+
+    async def fetch_economic_indicators(self) -> list[dict]:
+        """Fetch macro economic indicators: US10Y, DXY, WTI, Gold."""
+        results = []
+        for name, symbol in MACRO_INDICATORS:
+            try:
+                quote = await self.fetch_realtime_quote(symbol)
+                current = quote.get("close", 0)
+                prev = quote.get("previousClose", quote.get("previous_close", 0))
+                if prev and current:
+                    direction = "up" if current > prev else ("down" if current < prev else "flat")
+                else:
+                    direction = "flat"
+                results.append({
+                    "indicator_name": name,
+                    "value": current,
+                    "previous_value": prev,
+                    "change_direction": direction,
+                    "source": "EODHD",
+                })
+            except Exception:
+                pass
+        return results
+
+    async def calculate_relative_strength(self, sector_symbol: str, benchmark_symbol: str = "SPY.US") -> float:
+        """Calculate 1-month relative strength vs benchmark (SPY)."""
+        try:
+            sector_hist = await self.fetch_historical(sector_symbol, limit=25)
+            benchmark_hist = await self.fetch_historical(benchmark_symbol, limit=25)
+            if len(sector_hist) < 22 or len(benchmark_hist) < 22:
+                return 0.0
+            sector_ret = (sector_hist[0]["close"] - sector_hist[21]["close"]) / sector_hist[21]["close"] * 100
+            bench_ret = (benchmark_hist[0]["close"] - benchmark_hist[21]["close"]) / benchmark_hist[21]["close"] * 100
+            return round(sector_ret - bench_ret, 2)
+        except Exception:
+            return 0.0
 
     async def close(self) -> None:
         await self.client.aclose()
