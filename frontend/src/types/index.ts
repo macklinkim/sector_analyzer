@@ -126,6 +126,21 @@ export interface MarketReport {
   disclaimer: string;
 }
 
+// --- Sparkline Types ---
+
+export interface SparkPoint {
+  date: string;
+  close: number;
+}
+
+export interface SectorWithHistory {
+  sector: string;
+  name: string;
+  change_percent: number;
+  price: number;
+  history: SparkPoint[];
+}
+
 // --- Regime Helpers ---
 
 export type RegimeType = MacroRegime["regime"];

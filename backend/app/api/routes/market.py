@@ -30,7 +30,7 @@ def get_regime(svc: SupabaseService = Depends(get_supabase)):
 
 
 @router.get("/sector-history/{etf_symbol}")
-async def get_sector_history(etf_symbol: str, days: int = 7):
+async def get_sector_history(etf_symbol: str, days: int = 30):
     """Get historical price data for sparkline charts."""
     from app.config import Settings
     from app.services.eodhd import EODHDService
@@ -39,10 +39,53 @@ async def get_sector_history(etf_symbol: str, days: int = 7):
     service = EODHDService(settings)
     try:
         history = await service.fetch_historical(f"{etf_symbol}.US", limit=days)
-        # Return oldest-first for chart rendering
         return [{"date": d["date"], "close": d["close"]} for d in reversed(history)]
     finally:
         await service.close()
+
+
+@router.get("/sectors-with-history")
+async def get_sectors_with_history(
+    days: int = 30,
+    svc: SupabaseService = Depends(get_supabase),
+):
+    """Get all sectors with bundled price history for sparklines."""
+    from app.config import Settings
+    from app.services.eodhd import EODHDService, SECTOR_ETFS
+
+    sectors = svc.get_latest_sectors()
+    settings = Settings()
+    service = EODHDService(settings)
+
+    # Build etf_symbol → sector map
+    sector_map: dict[str, dict] = {}
+    for s in sectors:
+        sector_map[s.get("etf_symbol", "")] = s
+
+    results = []
+    try:
+        for name, symbol in SECTOR_ETFS:
+            sector_data = sector_map.get(symbol, {})
+            try:
+                history = await service.fetch_historical(f"{symbol}.US", limit=days)
+                history_points = [
+                    {"date": d["date"], "close": d["close"]}
+                    for d in reversed(history)
+                ]
+            except Exception:
+                history_points = []
+
+            results.append({
+                "sector": symbol,
+                "name": name,
+                "change_percent": sector_data.get("change_percent", 0),
+                "price": sector_data.get("price", 0),
+                "history": history_points,
+            })
+    finally:
+        await service.close()
+
+    return results
 
 
 @router.get("/sector-stocks/{etf_symbol}")

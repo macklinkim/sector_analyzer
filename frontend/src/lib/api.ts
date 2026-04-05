@@ -9,6 +9,7 @@ import type {
   RotationSignal,
   Sector,
   SectorScoreboard,
+  SectorWithHistory,
 } from "@/types";
 
 const BASE_URL = "/api";
@@ -43,4 +44,7 @@ export const api = {
     return fetchJson<SectorScoreboard[]>(`/analysis/scoreboards${params}`);
   },
   getSignals: () => fetchJson<RotationSignal[]>("/analysis/signals"),
+
+  getSectorsWithHistory: (days = 30) =>
+    fetchJson<SectorWithHistory[]>(`/market/sectors-with-history?days=${days}`),
 };
