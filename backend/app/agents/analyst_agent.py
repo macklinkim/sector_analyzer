@@ -2,9 +2,9 @@
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any
 
 import anthropic
+from langchain_core.runnables import RunnableConfig
 
 from app.agents.state import MarketAnalysisState, AnalysisResults
 from app.config import Settings
@@ -56,7 +56,7 @@ Respond with ONLY valid JSON (no markdown):
 {{"scoreboards": [{{"sector_name": "...", "etf_symbol": "...", "base_score": "0.0", "override_score": "0.0", "news_sentiment_score": "0.0", "momentum_score": "0.0", "final_score": "0.0", "rank": 1, "recommendation": "overweight|neutral|underweight", "reasoning": "explanation in Korean"}}], "rotation_signals": [{{"signal_type": "rotation_in|rotation_out|regime_shift", "from_sector": "...", "to_sector": "...", "strength": "0.0", "final_score": "0.0", "reasoning": "explanation in Korean"}}], "report_summary": "overall market summary in Korean", "key_highlights": ["point 1", "point 2", "point 3"]}}"""
 
 
-async def analyst_agent_node(state: MarketAnalysisState, config: Any) -> dict:
+async def analyst_agent_node(state: MarketAnalysisState, config: RunnableConfig) -> dict:
     """LangGraph node: analyze market data + news using Claude API."""
     logger.info("Analyst Agent: starting analysis (batch=%s)", state["batch_type"])
 

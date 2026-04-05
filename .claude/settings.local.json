@@ -1,11 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python:*)",
-      "Bash(node:*)",
-      "Bash(scoop install:*)",
-      "Bash(powershell.exe:*)",
-      "Bash(export PATH=\"$HOME/scoop/shims:$PATH\")"
-    ]
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Agent(*)",
+      "NotebookEdit(*)"
+    ],
+    "defaultMode": "bypassPermissions"
   }
 }

@@ -1,6 +1,7 @@
 # backend/app/agents/data_agent.py
 import logging
-from typing import Any
+
+from langchain_core.runnables import RunnableConfig
 
 from app.agents.state import MarketAnalysisState, MarketData
 from app.services.eodhd import EODHDService
@@ -9,7 +10,7 @@ from app.config import Settings
 logger = logging.getLogger(__name__)
 
 
-async def data_agent_node(state: MarketAnalysisState, config: Any) -> dict:
+async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) -> dict:
     """LangGraph node: collect market data from EODHD API."""
     logger.info("Data Agent: collecting market data (batch=%s)", state["batch_type"])
 

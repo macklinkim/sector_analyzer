@@ -1,6 +1,7 @@
 # backend/app/agents/news_agent.py
 import logging
-from typing import Any
+
+from langchain_core.runnables import RunnableConfig
 
 from app.agents.state import MarketAnalysisState, NewsData
 from app.services.newsapi import NewsAPIService
@@ -10,7 +11,7 @@ from app.config import Settings
 logger = logging.getLogger(__name__)
 
 
-async def news_agent_node(state: MarketAnalysisState, config: Any) -> dict:
+async def news_agent_node(state: MarketAnalysisState, config: RunnableConfig) -> dict:
     """LangGraph node: collect news from NewsAPI or RSS fallback."""
     logger.info("News Agent: collecting news (batch=%s)", state["batch_type"])
 
