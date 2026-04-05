@@ -1,10 +1,11 @@
 import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.api.deps import get_supabase
-from app.services.supabase import SupabaseService
 from app.agents.graph import build_graph
 from app.agents.state import create_initial_state
+from app.api.deps import get_supabase
+from app.services.supabase import SupabaseService
 
 logger = logging.getLogger(__name__)
 

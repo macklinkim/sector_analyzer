@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -10,8 +11,8 @@ def mock_supabase_svc():
 
 @pytest.fixture
 def client(mock_settings, mock_supabase_svc):
-    from app.main import app
     from app.api.deps import get_settings, get_supabase
+    from app.main import app
 
     app.dependency_overrides[get_settings] = lambda: mock_settings
     app.dependency_overrides[get_supabase] = lambda: mock_supabase_svc

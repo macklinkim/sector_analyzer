@@ -1,5 +1,6 @@
-from unittest.mock import patch, MagicMock
-from app.scheduler.jobs import run_batch, create_scheduler
+from unittest.mock import MagicMock, patch
+
+from app.scheduler.jobs import create_scheduler, run_batch
 
 
 def test_run_batch_pre_market():

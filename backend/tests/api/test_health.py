@@ -4,8 +4,8 @@ from fastapi.testclient import TestClient
 
 @pytest.fixture
 def client(mock_settings):
-    from app.main import app
     from app.api.deps import get_settings
+    from app.main import app
 
     app.dependency_overrides[get_settings] = lambda: mock_settings
     yield TestClient(app)
