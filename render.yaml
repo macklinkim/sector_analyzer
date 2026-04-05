@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: economi-analyzer
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: EODHD_API_KEY
+        sync: false
+      - key: NEWSAPI_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: TRIGGER_API_KEY
+        sync: false
+    healthCheckPath: /health
