@@ -49,6 +49,7 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
                     momentum_1m=mom.get("momentum_1m"),
                     momentum_3m=mom.get("momentum_3m"),
                     momentum_6m=mom.get("momentum_6m"),
+                    momentum_1y=mom.get("momentum_1y"),
                     collected_at=now_str,
                 ))
                 saved["sectors"] += 1

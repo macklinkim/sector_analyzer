@@ -36,7 +36,7 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
                 momentum[sector["symbol"]] = m
             except Exception as e:
                 logger.warning("Failed to calculate momentum for %s: %s", symbol, e)
-                momentum[sector["symbol"]] = {"momentum_1w": 0, "momentum_1m": 0, "momentum_3m": 0, "momentum_6m": 0}
+                momentum[sector["symbol"]] = {"momentum_1w": 0, "momentum_1m": 0, "momentum_3m": 0, "momentum_6m": 0, "momentum_1y": 0}
 
         market_data = MarketData(indices=indices, sectors=sectors, economic_indicators=[], momentum=momentum)
         logger.info("Data Agent: collected %d indices, %d sectors", len(indices), len(sectors))
