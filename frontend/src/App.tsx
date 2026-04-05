@@ -3,6 +3,7 @@ import { LoginGate, logout, useAuth } from "@/components/auth/LoginGate";
 import { useAnalysisData } from "@/hooks/useAnalysisData";
 import { useMarketData } from "@/hooks/useMarketData";
 import { useNewsData } from "@/hooks/useNewsData";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { GlobalMacroHeader } from "@/components/header/GlobalMacroHeader";
 import { SectorHeatmap } from "@/components/sector/SectorHeatmap";
 import { SectorSparkline } from "@/components/sector/SectorSparkline";
@@ -20,6 +21,10 @@ function Dashboard() {
   const analysisData = useAnalysisData();
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const selectedEtf = marketData.sectors.find((s) => s.name === selectedSector)?.etf_symbol ?? null;
+
+  if (marketData.loading && newsData.loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">

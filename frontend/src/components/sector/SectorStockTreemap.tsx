@@ -73,13 +73,33 @@ export function SectorStockTreemap({ selectedSector, etfSymbol }: SectorStockTre
   const [stocks, setStocks] = useState<StockData[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+
   const fetchStocks = useCallback(async () => {
     if (!etfSymbol) return;
+
+    // Check localStorage cache
+    const cacheKey = `sector_stocks_${etfSymbol}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const { data, ts } = JSON.parse(cached) as { data: StockData[]; ts: number };
+        if (Date.now() - ts < CACHE_TTL_MS) {
+          setStocks(data);
+          return;
+        }
+      } catch {
+        // corrupted cache, fetch fresh
+      }
+    }
+
     setLoading(true);
     try {
       const resp = await fetch(`/api/market/sector-stocks/${etfSymbol}`);
       if (resp.ok) {
-        setStocks(await resp.json());
+        const data: StockData[] = await resp.json();
+        setStocks(data);
+        localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
       }
     } catch {
       // ignore
