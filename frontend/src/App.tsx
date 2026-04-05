@@ -22,12 +22,11 @@ function Dashboard() {
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const selectedEtf = marketData.sectors.find((s) => s.name === selectedSector)?.etf_symbol ?? null;
 
-  if (marketData.loading && newsData.loading) {
-    return <LoadingScreen />;
-  }
+  const isLoading = marketData.loading || newsData.loading;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {isLoading && <LoadingScreen />}
       {/* Area A: Global Macro Header */}
       <header>
         <GlobalMacroHeader
