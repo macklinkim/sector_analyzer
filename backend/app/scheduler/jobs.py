@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime, timezone
 
@@ -15,7 +16,7 @@ def run_batch(batch_type: str) -> dict:
     try:
         graph = build_graph()
         initial_state = create_initial_state(batch_type)
-        result = graph.invoke(initial_state)
+        result = asyncio.run(graph.ainvoke(initial_state))
         logger.info("Completed %s batch", batch_type)
         return result
     except Exception as e:
