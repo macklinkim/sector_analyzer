@@ -41,6 +41,10 @@ export default function App() {
             loading={marketData.loading}
             onSectorClick={setSelectedSector}
           />
+          <SectorStockTreemap
+            selectedSector={selectedSector}
+            etfSymbol={selectedEtf}
+          />
           <SectorSparkline
             sectors={marketData.sectors}
             selectedSector={selectedSector}
@@ -49,10 +53,6 @@ export default function App() {
           <MarketMovers
             sectors={marketData.sectors}
             selectedSector={selectedSector}
-          />
-          <SectorStockTreemap
-            selectedSector={selectedSector}
-            etfSymbol={selectedEtf}
           />
         </div>
 

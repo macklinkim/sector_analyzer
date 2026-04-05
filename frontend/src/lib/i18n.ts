@@ -12,6 +12,7 @@ export const SECTOR_LABELS: Record<string, string> = {
   XLU: "유틸리티",
   XLV: "헬스케어",
   XLP: "필수소비재",
+  XLC: "커뮤니케이션",
   // Communication sub-sectors
   META: "커뮤니케이션",
   GOOGL: "커뮤니케이션",
@@ -28,6 +29,7 @@ export const SECTOR_LABELS: Record<string, string> = {
   Healthcare: "헬스케어",
   "Consumer Staples": "필수소비재",
   Communication: "커뮤니케이션",
+  "Communication Services": "커뮤니케이션",
 };
 
 export const INDEX_LABELS: Record<string, string> = {

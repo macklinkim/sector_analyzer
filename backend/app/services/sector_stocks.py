@@ -11,4 +11,5 @@ SECTOR_CONSTITUENTS: dict[str, list[str]] = {
     "XLU": ["NEE", "SO", "DUK", "CEG", "SRE", "AEP", "D", "EXC", "PCG", "XEL", "WEC", "ED"],
     "XLV": ["UNH", "JNJ", "LLY", "PFE", "ABT", "TMO", "MRK", "ABBV", "DHR", "BMY", "AMGN", "MDT", "ISRG", "GILD"],
     "XLP": ["PG", "KO", "PEP", "COST", "WMT", "PM", "MO", "MDLZ", "CL", "KMB", "GIS", "STZ"],
+    "XLC": ["GOOGL", "META", "NFLX", "DIS", "CMCSA", "T", "VZ", "TMUS", "CHTR", "EA", "WBD", "TTWO", "LYV", "PARA"],
 }

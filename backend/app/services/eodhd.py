@@ -6,6 +6,7 @@ SECTOR_ETFS = [
     ("Financials", "XLF"),
     ("Real Estate", "XLRE"),
     ("Technology", "XLK"),
+    ("Communication Services", "XLC"),
     ("Consumer Discretionary", "XLY"),
     ("Industrials", "XLI"),
     ("Materials", "XLB"),
