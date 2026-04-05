@@ -56,13 +56,9 @@ function Dashboard() {
             selectedSector={selectedSector}
             onSectorClick={setSelectedSector}
           />
-          <MarketMovers
-            sectors={marketData.sectors}
-            selectedSector={selectedSector}
-          />
         </div>
 
-        {/* Area C: News Impact & Calendar */}
+        {/* Area C: News Impact & Calendar & Rankings */}
         <div className="space-y-4">
           <NewsImpactFeed
             articles={newsData.articles}
@@ -72,6 +68,10 @@ function Dashboard() {
           <EconomicCalendar
             indicators={marketData.indicators}
             loading={marketData.loading}
+          />
+          <MarketMovers
+            sectors={marketData.sectors}
+            selectedSector={selectedSector}
           />
         </div>
       </main>
