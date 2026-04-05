@@ -24,6 +24,8 @@ export interface Sector {
   momentum_3m: number | null;
   momentum_6m: number | null;
   momentum_1y: number | null;
+  week_52_low: number | null;
+  week_52_high: number | null;
   rs_rank: number | null;
   collected_at: string;
 }

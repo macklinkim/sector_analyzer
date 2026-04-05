@@ -26,6 +26,8 @@ class Sector(BaseModel):
     momentum_3m: Decimal | None = None
     momentum_6m: Decimal | None = None
     momentum_1y: Decimal | None = None
+    week_52_low: Decimal | None = None
+    week_52_high: Decimal | None = None
     rs_rank: int | None = None
     collected_at: datetime
 

@@ -134,6 +134,22 @@ class EODHDService:
                 pass
         return results
 
+    async def calculate_52week_range(self, symbol: str) -> dict:
+        """Calculate 52-week high and low from historical data."""
+        try:
+            history = await self.fetch_historical(symbol, limit=260)
+            if not history:
+                return {"week_52_low": 0, "week_52_high": 0}
+            prices = [d["close"] for d in history if d.get("close")]
+            if not prices:
+                return {"week_52_low": 0, "week_52_high": 0}
+            return {
+                "week_52_low": round(min(prices), 2),
+                "week_52_high": round(max(prices), 2),
+            }
+        except Exception:
+            return {"week_52_low": 0, "week_52_high": 0}
+
     async def calculate_relative_strength(self, sector_symbol: str, benchmark_symbol: str = "SPY.US") -> float:
         """Calculate 1-month relative strength vs benchmark (SPY)."""
         try:

@@ -51,6 +51,14 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
             except Exception as e:
                 logger.warning("Failed to calculate RS for %s: %s", symbol, e)
                 relative_strength[sector["symbol"]] = 0.0
+            try:
+                w52 = await service.calculate_52week_range(symbol)
+                sector["week_52_low"] = w52["week_52_low"]
+                sector["week_52_high"] = w52["week_52_high"]
+            except Exception as e:
+                logger.warning("Failed to calculate 52-week range for %s: %s", symbol, e)
+                sector["week_52_low"] = 0
+                sector["week_52_high"] = 0
 
         market_data = MarketData(
             indices=indices,

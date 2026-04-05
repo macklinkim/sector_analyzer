@@ -50,6 +50,8 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
                     momentum_3m=mom.get("momentum_3m"),
                     momentum_6m=mom.get("momentum_6m"),
                     momentum_1y=mom.get("momentum_1y"),
+                    week_52_low=sec.get("week_52_low"),
+                    week_52_high=sec.get("week_52_high"),
                     relative_strength=market_data.relative_strength.get(sec.get("symbol", "")),
                     collected_at=now_str,
                 ))
