@@ -5,11 +5,11 @@
 - `any` 타입 사용 금지, 공유 타입은 `src/types/index.ts`에 정의
 - 서버/클라이언트 컴포넌트 구분 명확히 ("use client" 필요 시에만)
 
-## Next.js
-- App Router 사용 (pages router 금지)
-- 서버 컴포넌트 우선, 클라이언트 컴포넌트는 인터랙션 필요 시에만
-- 데이터 페칭은 서버 컴포넌트에서 fetch() 사용
-- API 클라이언트는 `src/lib/api.ts`에 중앙화
+## Vite + React
+- Vite + React SPA (CSR 전용, SSR 불필요)
+- React Router 사용 (필요 시, 현재는 SPA 단일 페이지)
+- 데이터 페칭은 `src/lib/api.ts`의 fetch wrapper 사용
+- API 클라이언트는 `src/lib/api.ts`에 중앙��
 
 ## UI/Styling
 - shadcn/ui 컴포넌트 우선 사용

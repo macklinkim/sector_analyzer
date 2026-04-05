@@ -215,8 +215,14 @@ pip install playwright-stealth
 ```bash
 cd frontend
 
-# Next.js 프로젝트 초기화 (최초 1회)
-npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir
+# Vite + React 프로젝트 초기화 (최초 1회)
+npm create vite@latest . -- --template react-ts
+
+# 의존성 설치
+npm install
+
+# Tailwind CSS 설정
+npm install -D tailwindcss @tailwindcss/vite
 
 # shadcn/ui 초기화
 npx shadcn@latest init
@@ -236,7 +242,6 @@ npm install lucide-react    # 아이콘
 ```json
 {
   "dependencies": {
-    "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.12.0",
@@ -246,10 +251,13 @@ npm install lucide-react    # 아이콘
     "clsx": "^2.0.0"
   },
   "devDependencies": {
+    "vite": "^6.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
     "typescript": "^5.5.0",
     "@types/react": "^19.0.0",
     "@types/node": "^20.0.0",
-    "tailwindcss": "^3.4.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
     "eslint": "^9.0.0"
   }
 }
@@ -279,10 +287,10 @@ cd backend
 source .venv/bin/activate
 uvicorn app.main:app --reload --port 8000
 
-# 터미널 2: Frontend
+# 터미널 2: Frontend (Vite)
 cd frontend
 npm run dev
-# → http://localhost:3000
+# → http://localhost:5173
 
 # 터미널 3: MCP 서버 (필요 시)
 cd backend

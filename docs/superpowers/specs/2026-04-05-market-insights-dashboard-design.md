@@ -16,7 +16,8 @@
 | 뉴스 데이터 | NewsAPI.org (발급 필요) + Google News RSS (Fallback) |
 | DB | Supabase |
 | 아키텍처 | Monorepo (backend + frontend) |
-| 배포 | Vercel (프론트) + Railway/Render (백엔드) |
+| 프론트엔드 | Vite + React SPA (Next.js 제외 — FastAPI 단일 배포 우선) |
+| 배포 | Railway/Render 단일 배포 (FastAPI가 SPA 서빙) 또는 정적 분리 배포 |
 | Google 연동 | 2차 개발 (후순위) |
 | 스케줄 | 1일 2회 (Pre-Market 08:30 ET, Post-Market 17:00 ET) |
 | 심화 스크래핑 | Playwright MCP (동적 웹페이지 데이터 수집) |
@@ -60,12 +61,11 @@ economi_analyzer/
 │   ├── tests/
 │   ├── pyproject.toml
 │   └── .env.example
-├── frontend/
+├── frontend/                                    # Vite + React SPA
 │   ├── src/
-│   │   ├── app/
-│   │   │   ├── layout.tsx                    # 루트 레이아웃 (Dark Mode)
-│   │   │   ├── page.tsx                      # 대시보드 메인 (4 Area 그리드)
-│   │   │   └── globals.css
+│   │   ├── App.tsx                           # 루트 컴포넌트 (4 Area 그리드)
+│   │   ├── main.tsx                          # Vite 진입점
+│   │   ├── index.css                         # Tailwind + Dark Mode
 │   │   ├── components/
 │   │   │   ├── header/
 │   │   │   │   ├── GlobalMacroHeader.tsx     # Area A: 전체 헤더
@@ -94,8 +94,9 @@ economi_analyzer/
 │   │   │   ├── api.ts
 │   │   │   └── utils.ts
 │   │   └── types/index.ts
-│   ├── next.config.ts
+│   ├── vite.config.ts
 │   ├── tailwind.config.ts
+│   ├── tsconfig.json
 │   └── package.json
 ├── docs/
 │   ├── draft.md
@@ -235,10 +236,9 @@ economi_analyzer/
 
 ```
 frontend/src/
-├── app/
-│   ├── layout.tsx              # 루트 레이아웃 (Dark Mode)
-│   ├── page.tsx                # 대시보드 메인 (4 Area 그리드)
-│   └── globals.css
+├── App.tsx                     # 루트 컴포넌트 (4 Area 그리드)
+├── main.tsx                    # Vite 진입점
+├── index.css                   # Tailwind + 커스텀 변수 (Dark Mode)
 ├── components/
 │   ├── header/
 │   │   ├── GlobalMacroHeader.tsx   # Area A: 티커 바 + 거시 지표
@@ -319,12 +319,12 @@ frontend/src/
 - APScheduler 배치 작업 설정
 
 ### Phase 4: 프론트엔드
-- Next.js + shadcn/ui 대시보드 구현
-- 차트, 히트맵, 뉴스 피드, 스코어보드 컴포넌트
+- Vite + React SPA + shadcn/ui 대시보드 구현
+- 4 Area 레이아웃, 차트, 히트맵, 뉴스 피드, 스크리너 컴포넌트
 
 ### Phase 5: 통합 + 배포
 - E2E 통합 테스트
-- Vercel + Railway 배포
+- Railway/Render 단일 배포 (FastAPI가 SPA 정적 파일 서빙)
 - 면책 조항, 모니터링
 
 ### Phase 6 (후순위): Google 연동

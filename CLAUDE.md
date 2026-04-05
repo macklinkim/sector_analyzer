@@ -2,17 +2,17 @@
 
 ## Project Overview
 
-시장의 섹터 순환매(Sector Rotation) 흐름을 선제적으로 포착하고 투자 인사이트를 제공하는 종합 미국 주식 대시보드. EODHD(금융 데이터) + NewsAPI(뉴스) → LangGraph AI 에이전트 파이프라인 → Next.js 대시보드.
+시장의 섹터 순환매(Sector Rotation) 흐름을 선제적으로 포착하고 투자 인사이트를 제공하는 종합 미국 주식 대시보드. EODHD(금융 데이터) + NewsAPI(뉴스) → LangGraph AI 에이전트 파이프라인 → Vite + React SPA 대시보드.
 
 ## Tech Stack
 
 - **Backend:** Python 3.12+, FastAPI, LangGraph, LangChain, APScheduler
-- **Frontend:** Next.js 15, React 19, shadcn/ui, Tailwind CSS, Recharts
+- **Frontend:** Vite + React 19, shadcn/ui, Tailwind CSS, Recharts
 - **AI:** Claude API (Anthropic SDK)
 - **DB:** Supabase (PostgreSQL)
 - **Data:** EODHD API, NewsAPI.org, Google News RSS (fallback)
 - **Scraping:** Playwright MCP (동적 SPA 데이터), Claude Vision (차트 스크린샷 분석)
-- **Deploy:** Vercel (frontend), Railway/Render (backend)
+- **Deploy:** Railway/Render (FastAPI가 정적 프론트엔드도 서빙, 단일 배포) 또는 Vercel/Netlify (정적 SPA 분리 배포)
 
 ## Project Structure
 
@@ -27,9 +27,9 @@ economi_analyzer/
 │   │   ├── services/  # 외부 API 클라이언트
 │   │   └── scheduler/ # APScheduler 배치 작업
 │   └── tests/
-├── frontend/          # Next.js 대시보드
+├── frontend/          # Vite + React SPA 대시보드
 │   └── src/
-│       ├── app/           # Next.js App Router
+│       ├── App.tsx        # 루트 컴포넌트
 │       ├── components/
 │       │   ├── header/    # GlobalMacroHeader, TickerBar, RegimeBadge
 │       │   ├── sector/    # SectorHeatmap, SectorSparkline, MarketMovers
@@ -71,7 +71,7 @@ economi_analyzer/
 
 ### TypeScript (frontend)
 - TypeScript strict mode
-- Next.js App Router (서버 컴포넌트 우선)
+- Vite + React SPA (CSR, SSR 불필요)
 - shadcn/ui 컴포넌트 사용 (직접 UI 구현 최소화)
 - 스타일: Tailwind CSS (인라인 스타일 금지)
 
@@ -100,8 +100,9 @@ pytest
 
 # Frontend
 cd frontend && npm install
-npm run dev
-npm run build
+npm run dev        # Vite dev server
+npm run build      # 정적 빌드 → dist/
+npm run preview    # 빌드 결과 로컬 미리보기
 ```
 
 ## Constraints & Warnings
