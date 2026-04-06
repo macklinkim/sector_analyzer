@@ -63,7 +63,19 @@ export function MomentumBar({ sectors, loading }: MomentumBarProps) {
               }}
               formatter={(value) => [`${(value as number).toFixed(2)}%`]}
             />
-            <Legend wrapperStyle={{ fontSize: 11, color: "var(--color-muted-foreground)" }} />
+            <Legend
+              wrapperStyle={{ fontSize: 11, color: "var(--color-muted-foreground)" }}
+              content={() => (
+                <ul className="flex justify-center gap-4 pt-1 text-[11px] text-muted-foreground">
+                  {([["1W","#60a5fa"],["1M","#22c55e"],["3M","#f59e0b"],["1Y","#a78bfa"]] as const).map(([label, color]) => (
+                    <li key={label} className="flex items-center gap-1">
+                      <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
+                      {label}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            />
             <Bar dataKey="1W" fill="#60a5fa" radius={[2, 2, 0, 0]} />
             <Bar dataKey="1M" fill="#22c55e" radius={[2, 2, 0, 0]} />
             <Bar dataKey="3M" fill="#f59e0b" radius={[2, 2, 0, 0]} />

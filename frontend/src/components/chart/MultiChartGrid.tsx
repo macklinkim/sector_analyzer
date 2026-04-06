@@ -13,11 +13,11 @@ interface MultiChartGridProps {
 export function MultiChartGrid({ sectors, signals, loading }: MultiChartGridProps) {
   return (
     <div className="space-y-4">
-      <EventMarker signals={signals} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <MomentumBar sectors={sectors} loading={loading} />
+        <EventMarker signals={signals} />
         <RelativeStrength sectors={sectors} loading={loading} />
       </div>
+      <MomentumBar sectors={sectors} loading={loading} />
       <RangeChart sectors={sectors} loading={loading} />
     </div>
   );
