@@ -56,6 +56,9 @@ export interface NewsArticleEnriched extends NewsArticle {
   impact_label: string | null;
   impact_score: number;
   related_sector: string | null;
+  news_category: string | null;  // A_MACRO, B_INDUSTRY, C_CORPORATE
+  expert_insight: string | null;
+  action_item: string | null;
 }
 
 export interface NewsImpactAnalysis {

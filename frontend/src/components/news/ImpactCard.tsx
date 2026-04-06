@@ -24,7 +24,19 @@ function getImpactLabelColor(label: string | null): string {
   return "text-muted-foreground";
 }
 
+const CATEGORY_STYLE: Record<string, { label: string; color: string }> = {
+  A_MACRO: { label: "매크로", color: "bg-red-500/20 text-red-400" },
+  B_INDUSTRY: { label: "산업", color: "bg-amber-500/20 text-amber-400" },
+  C_CORPORATE: { label: "기업", color: "bg-blue-500/20 text-blue-400" },
+};
+
 export function ImpactCard({ article, impact }: ImpactCardProps) {
+  const catStyle = article.news_category ? CATEGORY_STYLE[article.news_category] : null;
+  const score = impact?.impact_score ?? article.impact_score;
+
+  // Hide noise (no summary and score 0)
+  if (!article.summary_ko && score === 0) return null;
+
   return (
     <a
       href={article.url}
@@ -42,19 +54,33 @@ export function ImpactCard({ article, impact }: ImpactCardProps) {
             <span>·</span>
             <span>{timeAgo(article.published_at)}</span>
           </div>
-          {/* Korean AI Summary */}
+
           {article.summary_ko && (
             <p className="mt-1.5 text-xs leading-relaxed text-card-foreground">
               {article.summary_ko}
               {article.impact_label && (
                 <span className={cn("ml-1 font-medium", getImpactLabelColor(article.impact_label))}>
-                  [{article.impact_label} {article.impact_score}/10
+                  [{article.impact_label} {score}/10
                   {article.related_sector ? ` · ${article.related_sector}` : ""}]
                 </span>
               )}
             </p>
           )}
-          {/* Fallback: English summary if no Korean */}
+
+          {/* Expert Insight */}
+          {article.expert_insight && (
+            <p className="mt-1 text-[11px] leading-relaxed text-amber-400/80">
+              {article.expert_insight}
+            </p>
+          )}
+
+          {/* Action Item */}
+          {article.action_item && (
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              <span className="font-medium text-foreground/70">Action:</span> {article.action_item}
+            </p>
+          )}
+
           {!article.summary_ko && article.summary && (
             <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
               {article.summary}
@@ -62,16 +88,21 @@ export function ImpactCard({ article, impact }: ImpactCardProps) {
           )}
         </div>
 
-        {(impact || article.impact_score > 0) && (
+        {score > 0 && (
           <div className="flex shrink-0 flex-col items-end gap-1">
             <span
               className={cn(
                 "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold",
-                getImpactColor(impact?.impact_score ?? article.impact_score),
+                getImpactColor(score),
               )}
             >
-              {impact?.impact_score ?? article.impact_score}
+              {score}
             </span>
+            {catStyle && (
+              <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium", catStyle.color)}>
+                {catStyle.label}
+              </span>
+            )}
             {article.related_sector && (
               <Badge variant="default" className="text-[10px]">
                 {article.related_sector}
