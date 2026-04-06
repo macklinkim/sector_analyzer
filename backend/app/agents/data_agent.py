@@ -4,31 +4,21 @@ import logging
 from langchain_core.runnables import RunnableConfig
 
 from app.agents.state import MarketAnalysisState, MarketData
-from app.services.eodhd import EODHDService
-from app.config import Settings
+from app.services.yahoo_finance import YahooFinanceService
 
 logger = logging.getLogger(__name__)
 
 
 async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) -> dict:
-    """LangGraph node: collect market data from EODHD API."""
+    """LangGraph node: collect market data from Yahoo Finance."""
     logger.info("Data Agent: collecting market data (batch=%s)", state["batch_type"])
 
-    settings = None
-    try:
-        settings = config.get("configurable", {}).get("settings")
-    except (AttributeError, TypeError):
-        pass
-    if settings is None:
-        settings = Settings()
-
-    service = EODHDService(settings)
+    service = YahooFinanceService()
 
     try:
         indices = await service.fetch_indices()
         sectors = await service.fetch_sector_etfs()
 
-        # Fetch macro economic indicators
         try:
             economic_indicators = await service.fetch_economic_indicators()
         except Exception as e:
@@ -38,19 +28,19 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
         momentum = {}
         relative_strength = {}
         for sector in sectors:
-            symbol = f"{sector['symbol']}.US"
+            symbol = sector["symbol"]
             try:
                 m = await service.calculate_momentum(symbol)
-                momentum[sector["symbol"]] = m
+                momentum[symbol] = m
             except Exception as e:
                 logger.warning("Failed to calculate momentum for %s: %s", symbol, e)
-                momentum[sector["symbol"]] = {"momentum_1w": 0, "momentum_1m": 0, "momentum_3m": 0, "momentum_6m": 0, "momentum_1y": 0}
+                momentum[symbol] = {"momentum_1w": 0, "momentum_1m": 0, "momentum_3m": 0, "momentum_6m": 0, "momentum_1y": 0}
             try:
                 rs = await service.calculate_relative_strength(symbol)
-                relative_strength[sector["symbol"]] = rs
+                relative_strength[symbol] = rs
             except Exception as e:
                 logger.warning("Failed to calculate RS for %s: %s", symbol, e)
-                relative_strength[sector["symbol"]] = 0.0
+                relative_strength[symbol] = 0.0
             try:
                 w52 = await service.calculate_52week_range(symbol)
                 sector["week_52_low"] = w52["week_52_low"]
@@ -67,7 +57,8 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
             momentum=momentum,
             relative_strength=relative_strength,
         )
-        logger.info("Data Agent: collected %d indices, %d sectors", len(indices), len(sectors))
+        logger.info("Data Agent: collected %d indices, %d sectors, %d indicators",
+                     len(indices), len(sectors), len(economic_indicators))
         return {"market_data": market_data}
     except Exception as e:
         logger.error("Data Agent failed: %s", e)

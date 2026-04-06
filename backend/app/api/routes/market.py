@@ -1,7 +1,12 @@
+import logging
+import time
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import get_supabase
 from app.services.supabase import SupabaseService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
@@ -32,13 +37,11 @@ def get_regime(svc: SupabaseService = Depends(get_supabase)):
 @router.get("/sector-history/{etf_symbol}")
 async def get_sector_history(etf_symbol: str, days: int = 30):
     """Get historical price data for sparkline charts."""
-    from app.config import Settings
-    from app.services.eodhd import EODHDService
+    from app.services.yahoo_finance import YahooFinanceService
 
-    settings = Settings()
-    service = EODHDService(settings)
+    service = YahooFinanceService()
     try:
-        history = await service.fetch_historical(f"{etf_symbol}.US", limit=days)
+        history = await service.fetch_historical(etf_symbol, limit=days)
         return [{"date": d["date"], "close": d["close"]} for d in reversed(history)]
     finally:
         await service.close()
@@ -50,14 +53,11 @@ async def get_sectors_with_history(
     svc: SupabaseService = Depends(get_supabase),
 ):
     """Get all sectors with bundled price history for sparklines."""
-    from app.config import Settings
-    from app.services.eodhd import EODHDService, SECTOR_ETFS
+    from app.services.yahoo_finance import SECTOR_ETFS, YahooFinanceService
 
     sectors = svc.get_latest_sectors()
-    settings = Settings()
-    service = EODHDService(settings)
+    service = YahooFinanceService()
 
-    # Build etf_symbol → sector map
     sector_map: dict[str, dict] = {}
     for s in sectors:
         sector_map[s.get("etf_symbol", "")] = s
@@ -67,7 +67,7 @@ async def get_sectors_with_history(
         for name, symbol in SECTOR_ETFS:
             sector_data = sector_map.get(symbol, {})
             try:
-                history = await service.fetch_historical(f"{symbol}.US", limit=days)
+                history = await service.fetch_historical(symbol, limit=days)
                 history_points = [
                     {"date": d["date"], "close": d["close"]}
                     for d in reversed(history)
@@ -88,20 +88,17 @@ async def get_sectors_with_history(
     return results
 
 
+# --- Sector Stocks with in-memory cache ---
+
 _sector_stocks_cache: dict[str, tuple[float, list[dict]]] = {}
 _SECTOR_STOCKS_TTL = 4 * 60 * 60  # 4 hours
 
 
 @router.get("/sector-stocks/{etf_symbol}")
 async def get_sector_stocks(etf_symbol: str):
-    import logging
-    import time
-
-    from app.config import Settings
-    from app.services.eodhd import EODHDService
     from app.services.sector_stocks import SECTOR_CONSTITUENTS
+    from app.services.yahoo_finance import YahooFinanceService
 
-    logger = logging.getLogger(__name__)
     etf_key = etf_symbol.upper()
 
     # Check in-memory cache
@@ -115,25 +112,10 @@ async def get_sector_stocks(etf_symbol: str):
     if not symbols:
         raise HTTPException(status_code=404, detail=f"Unknown sector ETF: {etf_symbol}")
 
-    settings = Settings()
-    service = EODHDService(settings)
-    results = []
+    service = YahooFinanceService()
     try:
-        for sym in symbols[:15]:
-            try:
-                quote = await service.fetch_latest_eod(f"{sym}.US")
-                if not quote:
-                    continue
-                results.append({
-                    "symbol": sym,
-                    "name": sym,
-                    "close": quote.get("close", 0),
-                    "change_p": quote.get("change_p", 0),
-                    "volume": quote.get("volume", 0),
-                    "market_cap": quote.get("volume", 0) * quote.get("close", 1),
-                })
-            except Exception as e:
-                logger.warning("Failed to fetch stock %s: %s", sym, e)
+        results = await service.fetch_sector_stocks(symbols[:15])
+
         # Add "etc" for remaining
         remaining = len(symbols) - len(results)
         if remaining > 0:
@@ -145,8 +127,12 @@ async def get_sector_stocks(etf_symbol: str):
                 "volume": 0,
                 "market_cap": 0,
             })
+
         # Cache results
         _sector_stocks_cache[etf_key] = (time.time(), results)
+    except Exception as e:
+        logger.error("Failed to fetch sector stocks for %s: %s", etf_key, e)
+        results = []
     finally:
         await service.close()
 
