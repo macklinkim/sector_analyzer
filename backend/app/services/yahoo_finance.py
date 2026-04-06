@@ -94,6 +94,31 @@ def _download_history(symbol: str, period: str = "1mo") -> list[dict]:
         return []
 
 
+def _fetch_single_quote(symbol: str) -> dict | None:
+    """Fetch a single symbol quote via yf.Ticker (works for special symbols like ^TNX, CL=F)."""
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period="5d")
+        if hist.empty or len(hist) < 1:
+            return None
+        latest = hist.iloc[-1]
+        prev = hist.iloc[-2] if len(hist) > 1 else None
+        cur_close = float(latest["Close"])
+        prev_close = float(prev["Close"]) if prev is not None else 0.0
+        change_p = 0.0
+        if prev_close and cur_close:
+            change_p = round((cur_close - prev_close) / prev_close * 100, 2)
+        return {
+            "close": round(cur_close, 2),
+            "previous_close": round(prev_close, 2),
+            "change_p": change_p,
+            "volume": int(latest["Volume"]) if "Volume" in latest.index else 0,
+        }
+    except Exception as e:
+        logger.warning("_fetch_single_quote failed for %s: %s", symbol, e)
+        return None
+
+
 class YahooFinanceService:
     """Async wrapper around yfinance (sync lib)."""
 
@@ -134,26 +159,28 @@ class YahooFinanceService:
         return results
 
     async def fetch_economic_indicators(self) -> list[dict]:
-        yf_symbols = [sym for _, sym in MACRO_INDICATORS]
-        quotes = await self._run(_download_quotes, yf_symbols)
         results = []
         for name, yf_sym in MACRO_INDICATORS:
-            q = quotes.get(yf_sym)
-            if not q:
-                continue
-            cur = q["close"]
-            prev = q["previous_close"]
-            if prev and cur:
-                direction = "up" if cur > prev else ("down" if cur < prev else "flat")
-            else:
-                direction = "flat"
-            results.append({
-                "indicator_name": name,
-                "value": cur,
-                "previous_value": prev,
-                "change_direction": direction,
-                "source": "Yahoo Finance",
-            })
+            try:
+                q = await self._run(_fetch_single_quote, yf_sym)
+                if not q:
+                    logger.warning("No data for indicator %s (%s)", name, yf_sym)
+                    continue
+                cur = q["close"]
+                prev = q["previous_close"]
+                if prev and cur:
+                    direction = "up" if cur > prev else ("down" if cur < prev else "flat")
+                else:
+                    direction = "flat"
+                results.append({
+                    "indicator_name": name,
+                    "value": cur,
+                    "previous_value": prev,
+                    "change_direction": direction,
+                    "source": "Yahoo Finance",
+                })
+            except Exception as e:
+                logger.warning("Failed to fetch indicator %s (%s): %s", name, yf_sym, e)
         return results
 
     async def calculate_momentum(self, symbol: str) -> dict:
