@@ -33,13 +33,16 @@ class SectorScoreboard(BaseModel):
 
 
 class RotationSignal(BaseModel):
-    signal_type: str
+    signal_type: str  # rotate_in, rotate_out, regime_shift
+    signal_grade: str = "WATCH"  # MAJOR, ALERT, WATCH
     from_sector: str | None = None
     to_sector: str | None = None
     strength: Decimal
     base_score: Decimal | None = None
     override_adjustment: Decimal | None = None
     final_score: Decimal
+    confidence_score: Decimal = Decimal("0.5")
+    macro_environment: str = ""  # Risk-On, Risk-Off, Inflationary, Deflationary
     reasoning: str
     supporting_news_urls: list[str] = []
     batch_type: str

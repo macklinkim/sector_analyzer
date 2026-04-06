@@ -101,12 +101,15 @@ export interface SectorScoreboard {
 
 export interface RotationSignal {
   signal_type: string;
+  signal_grade: "MAJOR" | "ALERT" | "WATCH";
   from_sector: string | null;
   to_sector: string | null;
   strength: number;
   base_score: number | null;
   override_adjustment: number | null;
   final_score: number;
+  confidence_score: number;
+  macro_environment: string;
   reasoning: string;
   supporting_news_urls: string[];
   batch_type: string;

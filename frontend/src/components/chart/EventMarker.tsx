@@ -8,28 +8,23 @@ interface EventMarkerProps {
   signals: RotationSignal[];
 }
 
-function SignalIcon({ type }: { type: string }) {
-  if (type === "rotate_in") return <span className="text-lg">📈</span>;
-  if (type === "rotate_out") return <span className="text-lg">📉</span>;
-  return <span className="text-lg">🔄</span>;
-}
+const GRADE_CONFIG = {
+  MAJOR: { label: "MAJOR", icon: "🔴", border: "border-red-500/40", hoverBorder: "hover:border-red-500/70", bg: "bg-red-500/10", text: "text-red-400" },
+  ALERT: { label: "ALERT", icon: "🟡", border: "border-amber-500/40", hoverBorder: "hover:border-amber-500/70", bg: "bg-amber-500/10", text: "text-amber-400" },
+  WATCH: { label: "WATCH", icon: "🔵", border: "border-blue-500/30", hoverBorder: "hover:border-blue-500/60", bg: "bg-blue-500/10", text: "text-blue-400" },
+} as const;
 
-function ScoreBar({ score }: { score: number }) {
-  const pct = Math.min(Math.abs(score) * 100, 100);
-  const isPositive = score >= 0;
+function ConfidenceBar({ score }: { score: number }) {
+  const pct = Math.min(score * 100, 100);
+  const color = score >= 0.7 ? "bg-red-500" : score >= 0.5 ? "bg-amber-500" : "bg-blue-500";
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
-        <div
-          className={cn(
-            "h-full rounded-full transition-all",
-            isPositive ? "bg-emerald-500" : "bg-red-500",
-          )}
-          style={{ width: `${pct}%` }}
-        />
+      <span className="text-[10px] text-muted-foreground">확신도</span>
+      <div className="h-1.5 w-14 overflow-hidden rounded-full bg-muted">
+        <div className={cn("h-full rounded-full", color)} style={{ width: `${pct}%` }} />
       </div>
-      <span className={cn("text-xs font-mono font-bold", isPositive ? "text-emerald-400" : "text-red-400")}>
-        {score > 0 ? "+" : ""}{score.toFixed(2)}
+      <span className="text-xs font-mono font-bold text-muted-foreground">
+        {(score * 100).toFixed(0)}%
       </span>
     </div>
   );
@@ -52,16 +47,16 @@ export function EventMarker({ signals }: EventMarkerProps) {
           </span>
           AI Rotation Signals
           <span className="ml-auto rounded-md border border-border px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
-            {signals.length}건 감지
+            {signals.length}건
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {topSignals.map((signal, i) => {
           const isExpanded = expandedIdx === i;
-          const isBullish = signal.signal_type.includes("in");
+          const grade = GRADE_CONFIG[signal.signal_grade as keyof typeof GRADE_CONFIG] ?? GRADE_CONFIG.WATCH;
           const sector = signal.to_sector ?? signal.from_sector ?? "Market";
-          const label =
+          const typeLabel =
             signal.signal_type === "rotate_in" ? "ROTATE IN" :
             signal.signal_type === "rotate_out" ? "ROTATE OUT" : "REGIME SHIFT";
 
@@ -71,28 +66,34 @@ export function EventMarker({ signals }: EventMarkerProps) {
               onClick={() => setExpandedIdx(isExpanded ? null : i)}
               className={cn(
                 "w-full rounded-lg border p-3 text-left transition-all",
-                isBullish
-                  ? "border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-500/5"
-                  : "border-red-500/30 hover:border-red-500/60 hover:bg-red-500/5",
-                isExpanded && (isBullish ? "bg-emerald-500/10 border-emerald-500/60" : "bg-red-500/10 border-red-500/60"),
+                grade.border, grade.hoverBorder,
+                isExpanded && grade.bg,
               )}
             >
               <div className="flex items-center gap-3">
-                <SignalIcon type={signal.signal_type} />
+                <span className="text-lg">{grade.icon}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
+                    <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold", grade.bg, grade.text)}>
+                      {grade.label}
+                    </span>
                     <Badge
-                      variant={isBullish ? "bullish" : "bearish"}
+                      variant={signal.signal_type.includes("in") ? "bullish" : "bearish"}
                       className="text-[10px] px-1.5 py-0"
                     >
-                      {label}
+                      {typeLabel}
                     </Badge>
                     <span className="text-sm font-semibold text-foreground truncate">
                       {sector}
                     </span>
                   </div>
-                  <div className="mt-1">
-                    <ScoreBar score={signal.final_score} />
+                  <div className="mt-1 flex items-center gap-3">
+                    <ConfidenceBar score={signal.confidence_score ?? 0.5} />
+                    {signal.macro_environment && (
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        {signal.macro_environment}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <span className="text-xs text-muted-foreground shrink-0">
