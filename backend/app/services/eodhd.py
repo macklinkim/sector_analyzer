@@ -43,12 +43,29 @@ class EODHDService:
         self.client = httpx.AsyncClient(timeout=30.0)
 
     async def fetch_realtime_quote(self, symbol: str) -> dict:
-        resp = await self.client.get(
-            f"{self.base_url}/real-time/{symbol}",
-            params={"api_token": self.api_key, "fmt": "json"},
-        )
-        resp.raise_for_status()
-        return resp.json()
+        """Fetch latest EOD data using free /api/eod/ endpoint."""
+        return await self.fetch_latest_eod(symbol)
+
+    async def fetch_latest_eod(self, symbol: str) -> dict:
+        """Get the latest end-of-day data (free tier compatible)."""
+        history = await self.fetch_historical(symbol, limit=2)
+        if not history:
+            return {}
+        latest = history[0]
+        prev = history[1] if len(history) > 1 else {}
+        change_p = 0.0
+        prev_close = prev.get("close", 0)
+        cur_close = latest.get("close", 0)
+        if prev_close and cur_close:
+            change_p = round((cur_close - prev_close) / prev_close * 100, 2)
+        return {
+            "close": cur_close,
+            "previous_close": prev_close,
+            "previousClose": prev_close,
+            "change_p": change_p,
+            "volume": latest.get("volume", 0),
+            "date": latest.get("date", ""),
+        }
 
     async def fetch_historical(self, symbol: str, period: str = "d", limit: int = 180) -> list[dict]:
         resp = await self.client.get(

@@ -88,13 +88,30 @@ async def get_sectors_with_history(
     return results
 
 
+_sector_stocks_cache: dict[str, tuple[float, list[dict]]] = {}
+_SECTOR_STOCKS_TTL = 4 * 60 * 60  # 4 hours
+
+
 @router.get("/sector-stocks/{etf_symbol}")
 async def get_sector_stocks(etf_symbol: str):
-    from app.services.sector_stocks import SECTOR_CONSTITUENTS
+    import logging
+    import time
+
     from app.config import Settings
     from app.services.eodhd import EODHDService
+    from app.services.sector_stocks import SECTOR_CONSTITUENTS
 
-    symbols = SECTOR_CONSTITUENTS.get(etf_symbol.upper(), [])
+    logger = logging.getLogger(__name__)
+    etf_key = etf_symbol.upper()
+
+    # Check in-memory cache
+    cached = _sector_stocks_cache.get(etf_key)
+    if cached:
+        ts, data = cached
+        if time.time() - ts < _SECTOR_STOCKS_TTL:
+            return data
+
+    symbols = SECTOR_CONSTITUENTS.get(etf_key, [])
     if not symbols:
         raise HTTPException(status_code=404, detail=f"Unknown sector ETF: {etf_symbol}")
 
@@ -104,7 +121,9 @@ async def get_sector_stocks(etf_symbol: str):
     try:
         for sym in symbols[:15]:
             try:
-                quote = await service.fetch_realtime_quote(f"{sym}.US")
+                quote = await service.fetch_latest_eod(f"{sym}.US")
+                if not quote:
+                    continue
                 results.append({
                     "symbol": sym,
                     "name": sym,
@@ -113,8 +132,8 @@ async def get_sector_stocks(etf_symbol: str):
                     "volume": quote.get("volume", 0),
                     "market_cap": quote.get("volume", 0) * quote.get("close", 1),
                 })
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to fetch stock %s: %s", sym, e)
         # Add "etc" for remaining
         remaining = len(symbols) - len(results)
         if remaining > 0:
@@ -126,6 +145,8 @@ async def get_sector_stocks(etf_symbol: str):
                 "volume": 0,
                 "market_cap": 0,
             })
+        # Cache results
+        _sector_stocks_cache[etf_key] = (time.time(), results)
     finally:
         await service.close()
 
