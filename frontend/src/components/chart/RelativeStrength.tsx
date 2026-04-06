@@ -86,10 +86,11 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
                 backgroundColor: "var(--color-card)",
                 border: "1px solid var(--color-border)",
                 borderRadius: 8,
-                color: "var(--color-foreground)",
                 fontSize: 12,
               }}
-              formatter={(value) => [`${(value as number).toFixed(2)}%`, "RS"]}
+              labelStyle={{ color: "var(--color-foreground)", fontWeight: 600 }}
+              itemStyle={{ color: "var(--color-foreground)" }}
+              formatter={(value) => [`RS : ${(value as number).toFixed(2)}%`]}
               labelFormatter={(label) => `${label}`}
             />
             <ReferenceLine y={0} stroke="var(--color-muted-foreground)" strokeWidth={1.5} />

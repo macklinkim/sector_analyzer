@@ -58,10 +58,15 @@ export function MomentumBar({ sectors, loading }: MomentumBarProps) {
                 backgroundColor: "var(--color-card)",
                 border: "1px solid var(--color-border)",
                 borderRadius: 8,
-                color: "var(--color-foreground)",
                 fontSize: 12,
               }}
+              labelStyle={{ color: "var(--color-foreground)", fontWeight: 600 }}
+              itemStyle={{ color: "var(--color-foreground)" }}
               formatter={(value) => [`${(value as number).toFixed(2)}%`]}
+              itemSorter={(item) => {
+                const order: Record<string, number> = { "1W": 0, "1M": 1, "3M": 2, "1Y": 3 };
+                return order[item.dataKey as string] ?? 99;
+              }}
             />
             <Legend
               wrapperStyle={{ fontSize: 11, color: "var(--color-muted-foreground)" }}
