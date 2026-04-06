@@ -100,7 +100,7 @@ class SupabaseService:
         seen: set[str] = set()
         deduped: list[dict] = []
         for row in result.data:
-            sym = row.get("symbol", "")
+            sym = row.get("etf_symbol", "")
             if sym not in seen:
                 seen.add(sym)
                 deduped.append(row)
