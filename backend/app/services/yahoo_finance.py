@@ -60,11 +60,13 @@ def _download_quotes(symbols: list[str], period: str = "5d") -> dict[str, dict]:
                 change_p = 0.0
                 if prev_close and cur_close:
                     change_p = round((cur_close - prev_close) / prev_close * 100, 2)
+                vol = latest.get("Volume", 0)
+                vol = int(vol) if vol == vol else 0  # NaN check
                 results[sym] = {
                     "close": round(cur_close, 2),
                     "previous_close": round(prev_close, 2),
                     "change_p": change_p,
-                    "volume": int(latest["Volume"]) if "Volume" in latest.index else 0,
+                    "volume": vol,
                     "date": str(latest.name.date()) if hasattr(latest.name, "date") else "",
                 }
             except Exception as e:
@@ -108,11 +110,13 @@ def _fetch_single_quote(symbol: str) -> dict | None:
         change_p = 0.0
         if prev_close and cur_close:
             change_p = round((cur_close - prev_close) / prev_close * 100, 2)
+        vol = latest.get("Volume", 0)
+        vol = int(vol) if vol == vol else 0  # NaN check
         return {
             "close": round(cur_close, 2),
             "previous_close": round(prev_close, 2),
             "change_p": change_p,
-            "volume": int(latest["Volume"]) if "Volume" in latest.index else 0,
+            "volume": vol,
         }
     except Exception as e:
         logger.warning("_fetch_single_quote failed for %s: %s", symbol, e)

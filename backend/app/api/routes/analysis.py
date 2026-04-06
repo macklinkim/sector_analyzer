@@ -7,7 +7,7 @@ from app.agents.graph import build_graph
 from app.agents.state import MarketAnalysisState, create_initial_state
 from app.api.deps import get_settings, get_supabase
 from app.config import Settings
-from app.models.market import MarketIndex, Sector
+from app.models.market import EconomicIndicator, MarketIndex, Sector
 from app.models.news import NewsArticle
 from app.services.supabase import SupabaseService
 
