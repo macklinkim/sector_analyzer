@@ -1,6 +1,10 @@
+import logging
+
 import httpx
 
 from app.config import Settings
+
+logger = logging.getLogger(__name__)
 
 SECTOR_ETFS = [
     ("Financials", "XLF"),
@@ -130,8 +134,8 @@ class EODHDService:
                     "change_direction": direction,
                     "source": "EODHD",
                 })
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to fetch indicator %s (%s): %s", name, symbol, e)
         return results
 
     async def calculate_52week_range(self, symbol: str) -> dict:

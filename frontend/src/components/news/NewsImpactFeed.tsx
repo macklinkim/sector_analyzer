@@ -65,7 +65,7 @@ export function NewsImpactFeed({ articles, impacts, crises, loading }: NewsImpac
     ...Array.from(categorySet)
       .sort()
       .map((cat) => ({ key: cat, label: getCategoryLabel(cat) })),
-    ...(crises.length > 0 ? [{ key: "crises", label: "글로벌 위기" }] : []),
+    { key: "crises", label: "글로벌 위기" },
   ];
 
   const filteredArticles =
@@ -105,7 +105,7 @@ export function NewsImpactFeed({ articles, impacts, crises, loading }: NewsImpac
         ) : activeTab === "crises" ? (
           crises.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              글로벌 위기 데이터를 불러오는 중...
+              글로벌 위기 데이터 없음 — 서버에서 뉴스를 수집하지 못했습니다
             </p>
           ) : (
             crises.map((crisis, i) => (

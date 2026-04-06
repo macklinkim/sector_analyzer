@@ -77,30 +77,51 @@ class SupabaseService:
             self.client.table("market_indices")
             .select("*")
             .order("collected_at", desc=True)
-            .limit(10)
+            .limit(20)
             .execute()
         )
-        return result.data
+        seen: set[str] = set()
+        deduped: list[dict] = []
+        for row in result.data:
+            sym = row.get("symbol", "")
+            if sym not in seen:
+                seen.add(sym)
+                deduped.append(row)
+        return deduped
 
     def get_latest_sectors(self) -> list[dict]:
         result = (
             self.client.table("sectors")
             .select("*")
             .order("collected_at", desc=True)
-            .limit(12)
+            .limit(30)
             .execute()
         )
-        return result.data
+        seen: set[str] = set()
+        deduped: list[dict] = []
+        for row in result.data:
+            sym = row.get("symbol", "")
+            if sym not in seen:
+                seen.add(sym)
+                deduped.append(row)
+        return deduped
 
     def get_latest_economic_indicators(self) -> list[dict]:
         result = (
             self.client.table("economic_indicators")
             .select("*")
             .order("reported_at", desc=True)
-            .limit(10)
+            .limit(20)
             .execute()
         )
-        return result.data
+        seen: set[str] = set()
+        deduped: list[dict] = []
+        for row in result.data:
+            name = row.get("indicator_name", "")
+            if name not in seen:
+                seen.add(name)
+                deduped.append(row)
+        return deduped
 
     def get_latest_news_articles(self, limit: int = 20) -> list[dict]:
         result = (

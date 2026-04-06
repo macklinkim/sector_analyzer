@@ -17,8 +17,9 @@ GOOGLE_NEWS_WORLD_RSS = "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdv
 async def fetch_world_headlines(limit: int = 20) -> list[dict]:
     """Fetch world news headlines from Google News RSS."""
     try:
+        headers = {"User-Agent": "Mozilla/5.0 (compatible; SectorAnalyzer/1.0)"}
         async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(GOOGLE_NEWS_WORLD_RSS)
+            resp = await client.get(GOOGLE_NEWS_WORLD_RSS, headers=headers)
             resp.raise_for_status()
             feed = feedparser.parse(resp.text)
             items = []
@@ -29,6 +30,7 @@ async def fetch_world_headlines(limit: int = 20) -> list[dict]:
                     "published": entry.get("published", ""),
                     "link": entry.get("link", ""),
                 })
+            logger.info("Fetched %d world headlines from Google News RSS", len(items))
             return items
     except Exception as e:
         logger.warning("Failed to fetch world headlines: %s", e)
