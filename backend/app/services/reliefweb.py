@@ -18,7 +18,7 @@ async def fetch_world_headlines(limit: int = 20) -> list[dict]:
     """Fetch world news headlines from Google News RSS."""
     try:
         headers = {"User-Agent": "Mozilla/5.0 (compatible; SectorAnalyzer/1.0)"}
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             resp = await client.get(GOOGLE_NEWS_WORLD_RSS, headers=headers)
             resp.raise_for_status()
             feed = feedparser.parse(resp.text)
