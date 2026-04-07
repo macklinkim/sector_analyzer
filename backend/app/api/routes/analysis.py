@@ -134,9 +134,27 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
 
         for sig in analysis.rotation_signals:
             try:
-                svc.client.table("rotation_signals").insert(sig).execute()
+                # Map fields to DB columns
+                db_sig = {
+                    "signal_type": sig.get("signal_type", "regime_shift"),
+                    "signal_grade": sig.get("signal_grade", "WATCH"),
+                    "from_sector": sig.get("from_sector"),
+                    "to_sector": sig.get("to_sector"),
+                    "strength": float(sig.get("strength", 0)),
+                    "base_score": float(sig.get("base_score", 0)) if sig.get("base_score") is not None else None,
+                    "override_adjustment": float(sig.get("override_adjustment", 0)) if sig.get("override_adjustment") is not None else None,
+                    "final_score": float(sig.get("final_score", 0)),
+                    "confidence_score": float(sig.get("confidence_score", 0.5)),
+                    "macro_environment": sig.get("macro_environment", ""),
+                    "reasoning": sig.get("reasoning", ""),
+                    "supporting_news_urls": sig.get("supporting_news_urls", []),
+                    "batch_type": sig.get("batch_type", batch_type),
+                    "detected_at": sig.get("detected_at", now_str if 'now_str' in dir() else datetime.utcnow().isoformat() + "Z"),
+                }
+                svc.client.table("rotation_signals").insert(db_sig).execute()
+                saved["signals"] = saved.get("signals", 0) + 1
             except Exception as e:
-                logger.warning("Failed to save signal: %s", e)
+                logger.warning("Failed to save signal: %s — data: %s", e, sig)
 
         if analysis.report:
             try:
