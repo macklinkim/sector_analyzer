@@ -1,13 +1,4 @@
-# Stage 1: Build frontend
-FROM node:22-alpine AS frontend-build
-WORKDIR /app/frontend
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
-
-# Stage 2: Python backend + serve static
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim
 WORKDIR /app
 
 # Install timezone data (python:3.12-slim lacks it)
@@ -17,9 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends tzdata && rm -r
 COPY backend/pyproject.toml backend/
 COPY backend/app/ backend/app/
 RUN pip install --no-cache-dir backend/
-
-# Copy frontend build output
-COPY --from=frontend-build /app/frontend/dist/ frontend/dist/
 
 # Environment
 ENV PORT=8000

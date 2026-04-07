@@ -1,11 +1,8 @@
 import logging
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 from app.api.routes.analysis import router as analysis_router
 from app.api.routes.auth import router as auth_router
@@ -58,27 +55,11 @@ app.include_router(news_router)
 app.include_router(analysis_router)
 
 
-# Static files: serve frontend build
-_frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
-
-if _frontend_dist.is_dir():
-    app.mount("/assets", StaticFiles(directory=_frontend_dist / "assets"), name="assets")
-
-    @app.get("/{full_path:path}")
-    async def spa_fallback(full_path: str) -> FileResponse:
-        """SPA fallback: serve index.html for all non-API routes."""
-        file_path = _frontend_dist / full_path
-        if file_path.is_file():
-            return FileResponse(file_path)
-        return FileResponse(_frontend_dist / "index.html")
-
-else:
-
-    @app.get("/")
-    def root() -> dict:
-        return {
-            "name": "Economi Analyzer API",
-            "version": "0.1.0",
-            "docs": "/docs",
-            "note": "Frontend not built. Run: cd frontend && npm run build",
-        }
+@app.get("/")
+def root() -> dict:
+    return {
+        "name": "Economi Analyzer API",
+        "version": "0.1.0",
+        "docs": "/docs",
+        "frontend": "https://sectoranalyzerfrontend2026.kopserf.workers.dev",
+    }
