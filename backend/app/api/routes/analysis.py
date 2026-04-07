@@ -81,10 +81,12 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
             except Exception as e:
                 logger.warning("Failed to save sector history: %s", e)
 
+        logger.info("sector_stocks count from pipeline: %d", len(market_data.sector_stocks))
         if market_data.sector_stocks:
             try:
                 cnt = svc.upsert_sector_stocks(market_data.sector_stocks)
                 saved["sector_stocks"] = cnt
+                logger.info("Saved %d sector stocks to DB", cnt)
             except Exception as e:
                 logger.warning("Failed to save sector stocks: %s", e)
 
