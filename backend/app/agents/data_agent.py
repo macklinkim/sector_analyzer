@@ -50,15 +50,48 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
                 sector["week_52_low"] = 0
                 sector["week_52_high"] = 0
 
+        # Collect sector history (sparklines) and sector stocks (treemap)
+        sector_history: list[dict] = []
+        sector_stocks: list[dict] = []
+
+        from app.services.sector_stocks import SECTOR_CONSTITUENTS
+
+        for sector in sectors:
+            symbol = sector["symbol"]
+            try:
+                hist = await service.fetch_historical(symbol, limit=30)
+                for pt in hist:
+                    sector_history.append({
+                        "etf_symbol": symbol,
+                        "trade_date": pt["date"],
+                        "close": pt["close"],
+                        "volume": pt.get("volume", 0),
+                    })
+            except Exception as e:
+                logger.warning("Failed to fetch history for %s: %s", symbol, e)
+
+            constituents = SECTOR_CONSTITUENTS.get(symbol, [])
+            if constituents:
+                try:
+                    stocks = await service.fetch_sector_stocks(constituents[:15])
+                    for st in stocks:
+                        st["etf_symbol"] = symbol
+                    sector_stocks.extend(stocks)
+                except Exception as e:
+                    logger.warning("Failed to fetch stocks for %s: %s", symbol, e)
+
         market_data = MarketData(
             indices=indices,
             sectors=sectors,
             economic_indicators=economic_indicators,
             momentum=momentum,
             relative_strength=relative_strength,
+            sector_history=sector_history,
+            sector_stocks=sector_stocks,
         )
-        logger.info("Data Agent: collected %d indices, %d sectors, %d indicators",
-                     len(indices), len(sectors), len(economic_indicators))
+        logger.info("Data Agent: collected %d indices, %d sectors, %d indicators, %d history pts, %d stocks",
+                     len(indices), len(sectors), len(economic_indicators),
+                     len(sector_history), len(sector_stocks))
         return {"market_data": market_data}
     except Exception as e:
         logger.error("Data Agent failed: %s", e)

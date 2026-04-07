@@ -73,6 +73,21 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
             except Exception as e:
                 logger.warning("Failed to save indicator: %s", e)
 
+        # Save sector history & stocks
+        if market_data.sector_history:
+            try:
+                cnt = svc.upsert_sector_history(market_data.sector_history)
+                saved["sector_history"] = cnt
+            except Exception as e:
+                logger.warning("Failed to save sector history: %s", e)
+
+        if market_data.sector_stocks:
+            try:
+                cnt = svc.upsert_sector_stocks(market_data.sector_stocks)
+                saved["sector_stocks"] = cnt
+            except Exception as e:
+                logger.warning("Failed to save sector stocks: %s", e)
+
     news_data = result.get("news_data")
     if news_data:
         now_str = datetime.utcnow().isoformat() + "Z"

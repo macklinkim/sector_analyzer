@@ -181,3 +181,60 @@ class SupabaseService:
                 .select("*").order("detected_at", desc=True).limit(20).execute()
             )
         return self._safe_execute(_q).data
+
+    # --- Sector History (스파크라인) ---
+
+    def upsert_sector_history(self, rows: list[dict]) -> int:
+        if not rows:
+            return 0
+        self._safe_execute(
+            lambda: self.client.table("sector_history")
+            .upsert(rows, on_conflict="etf_symbol,trade_date")
+            .execute()
+        )
+        return len(rows)
+
+    def get_sector_history(self, etf_symbol: str, days: int = 30) -> list[dict]:
+        def _q():
+            return (
+                self.client.table("sector_history")
+                .select("trade_date,close")
+                .eq("etf_symbol", etf_symbol)
+                .order("trade_date", desc=True)
+                .limit(days)
+                .execute()
+            )
+        return self._safe_execute(_q).data
+
+    def get_all_sector_history(self, days: int = 30) -> list[dict]:
+        def _q():
+            return (
+                self.client.table("sector_history")
+                .select("etf_symbol,trade_date,close")
+                .order("trade_date", desc=True)
+                .limit(days * 15)
+                .execute()
+            )
+        return self._safe_execute(_q).data
+
+    # --- Sector Stocks (구성종목) ---
+
+    def upsert_sector_stocks(self, rows: list[dict]) -> int:
+        if not rows:
+            return 0
+        self._safe_execute(
+            lambda: self.client.table("sector_stocks")
+            .upsert(rows, on_conflict="etf_symbol,symbol")
+            .execute()
+        )
+        return len(rows)
+
+    def get_sector_stocks(self, etf_symbol: str) -> list[dict]:
+        def _q():
+            return (
+                self.client.table("sector_stocks")
+                .select("symbol,name,close,change_p,volume,market_cap")
+                .eq("etf_symbol", etf_symbol)
+                .execute()
+            )
+        return self._safe_execute(_q).data

@@ -16,6 +16,8 @@ class MarketData:
     economic_indicators: list[dict] = field(default_factory=list)
     momentum: dict[str, dict] = field(default_factory=dict)
     relative_strength: dict[str, float] = field(default_factory=dict)
+    sector_history: list[dict] = field(default_factory=list)
+    sector_stocks: list[dict] = field(default_factory=list)
 
 
 @dataclass
