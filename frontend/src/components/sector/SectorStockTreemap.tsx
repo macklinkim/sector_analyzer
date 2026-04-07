@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSectorLabel } from "@/lib/i18n";
 import { formatPercent } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 interface StockData {
   symbol: string;
@@ -95,12 +96,9 @@ export function SectorStockTreemap({ selectedSector, etfSymbol }: SectorStockTre
 
     setLoading(true);
     try {
-      const resp = await fetch(`/api/market/sector-stocks/${etfSymbol}`);
-      if (resp.ok) {
-        const data: StockData[] = await resp.json();
-        setStocks(data);
-        localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
-      }
+      const data = await api.getSectorStocks(etfSymbol);
+      setStocks(data);
+      localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
     } catch {
       // ignore
     } finally {

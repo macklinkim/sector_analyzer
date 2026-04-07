@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSectorLabel } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
-import { formatCompactNumber, formatPercent, getChangeColor } from "@/lib/utils";
+import { cn, formatCompactNumber, formatPercent, getChangeColor } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 interface MarketMoversProps {
   sectors: { name: string; etf_symbol: string }[];
@@ -77,13 +77,10 @@ export function MarketMovers({ sectors, selectedSector }: MarketMoversProps) {
 
     setLoading(true);
     try {
-      const resp = await fetch(`/api/market/sector-stocks/${etfSymbol}`);
-      if (resp.ok) {
-        const data: StockData[] = await resp.json();
-        const filtered = data.filter((s) => s.symbol !== "ETC");
-        setStocks(filtered);
-        localStorage.setItem(cacheKey, JSON.stringify({ data: filtered, ts: Date.now() }));
-      }
+      const data = await api.getSectorStocks(etfSymbol);
+      const filtered = data.filter((s) => s.symbol !== "ETC");
+      setStocks(filtered);
+      localStorage.setItem(cacheKey, JSON.stringify({ data: filtered, ts: Date.now() }));
     } catch { /* ignore */ }
     setLoading(false);
   }, [etfSymbol]);

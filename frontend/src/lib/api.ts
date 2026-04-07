@@ -13,7 +13,7 @@ import type {
   SectorWithHistory,
 } from "@/types";
 
-const BASE_URL = "/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`);
@@ -50,4 +50,9 @@ export const api = {
     fetchJson<SectorWithHistory[]>(`/market/sectors-with-history?days=${days}`),
 
   getGlobalCrises: () => fetchJson<GlobalCrisis[]>("/news/crises"),
+
+  getSectorStocks: (etfSymbol: string) =>
+    fetchJson<{ symbol: string; name: string; close: number; change_p: number; volume: number; market_cap: number }[]>(
+      `/market/sector-stocks/${etfSymbol}`
+    ),
 };

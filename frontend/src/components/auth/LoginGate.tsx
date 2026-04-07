@@ -7,9 +7,10 @@ interface LoginGateProps {
 
 const SESSION_KEY = "economi_auth_token";
 const SESSION_NAME_KEY = "economi_auth_name";
+const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 async function loginApi(name: string): Promise<{ token: string; name: string }> {
-  const resp = await fetch("/api/auth/login", {
+  const resp = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name }),
@@ -22,7 +23,7 @@ async function loginApi(name: string): Promise<{ token: string; name: string }> 
 }
 
 async function verifyApi(token: string): Promise<boolean> {
-  const resp = await fetch(`/api/auth/verify?token=${token}`);
+  const resp = await fetch(`${BASE_URL}/auth/verify?token=${token}`);
   return resp.ok;
 }
 
