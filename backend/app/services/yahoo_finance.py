@@ -245,13 +245,21 @@ class YahooFinanceService:
             q = quotes.get(sym)
             if not q:
                 continue
+            close = q["close"]
+            change_p = q["change_p"]
+            volume = q["volume"]
+            # Skip NaN values
+            if close != close or change_p != change_p:
+                continue
+            if volume != volume:
+                volume = 0
             results.append({
                 "symbol": sym,
                 "name": sym,
-                "close": q["close"],
-                "change_p": q["change_p"],
-                "volume": q["volume"],
-                "market_cap": q["volume"] * q["close"],
+                "close": close,
+                "change_p": change_p,
+                "volume": volume,
+                "market_cap": volume * close,
             })
         return results
 

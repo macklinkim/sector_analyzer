@@ -70,7 +70,8 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
             except Exception as e:
                 logger.warning("Failed to fetch history for %s: %s", symbol, e)
 
-        # Fetch sector stocks per sector (smaller batches for reliability)
+        # Fetch sector stocks per sector with delay to avoid rate limiting
+        import asyncio as _asyncio
         for sector in sectors:
             sym = sector["symbol"]
             constituents = SECTOR_CONSTITUENTS.get(sym, [])[:15]
@@ -82,6 +83,7 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
                     st["etf_symbol"] = sym
                 sector_stocks.extend(stocks)
                 logger.info("Fetched %d stocks for %s", len(stocks), sym)
+                await _asyncio.sleep(2)  # Rate limit delay
             except Exception as e:
                 logger.warning("Failed to fetch stocks for %s: %s", sym, e)
 
