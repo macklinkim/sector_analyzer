@@ -70,15 +70,24 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
             except Exception as e:
                 logger.warning("Failed to fetch history for %s: %s", symbol, e)
 
-            constituents = SECTOR_CONSTITUENTS.get(symbol, [])
-            if constituents:
-                try:
-                    stocks = await service.fetch_sector_stocks(constituents[:15])
-                    for st in stocks:
-                        st["etf_symbol"] = symbol
-                    sector_stocks.extend(stocks)
-                except Exception as e:
-                    logger.warning("Failed to fetch stocks for %s: %s", symbol, e)
+        # Batch fetch all sector stocks at once
+        all_symbols: list[str] = []
+        symbol_to_etf: dict[str, str] = {}
+        for sector in sectors:
+            sym = sector["symbol"]
+            for stock_sym in SECTOR_CONSTITUENTS.get(sym, [])[:15]:
+                if stock_sym not in symbol_to_etf:
+                    all_symbols.append(stock_sym)
+                    symbol_to_etf[stock_sym] = sym
+
+        if all_symbols:
+            try:
+                all_stock_data = await service.fetch_sector_stocks(all_symbols)
+                for st in all_stock_data:
+                    st["etf_symbol"] = symbol_to_etf.get(st["symbol"], "")
+                sector_stocks = all_stock_data
+            except Exception as e:
+                logger.warning("Failed to fetch sector stocks batch: %s", e)
 
         market_data = MarketData(
             indices=indices,
