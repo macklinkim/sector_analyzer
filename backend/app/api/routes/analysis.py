@@ -23,13 +23,20 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
     market_data = result.get("market_data")
     if market_data:
         now_str = datetime.utcnow().isoformat() + "Z"
+        import math
         for idx in market_data.indices:
             try:
+                price = idx.get("close", idx.get("price", 0))
+                change = idx.get("change_p", idx.get("change_percent", 0))
+                if not isinstance(price, (int, float)) or math.isnan(price):
+                    price = 0
+                if not isinstance(change, (int, float)) or math.isnan(change):
+                    change = 0
                 svc.insert_market_index(MarketIndex(
                     symbol=idx.get("symbol", ""),
                     name=idx.get("name", ""),
-                    price=idx.get("close", idx.get("price", 0)),
-                    change_percent=idx.get("change_p", idx.get("change_percent", 0)),
+                    price=price,
+                    change_percent=change,
                     collected_at=now_str,
                 ))
                 saved["indices"] += 1
