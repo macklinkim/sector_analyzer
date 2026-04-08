@@ -255,7 +255,7 @@ def extract_news_sentiment(news_data: object) -> dict[str, float]:
         pos_count = 0
         neg_count = 0
         for article in all_articles:
-            title = (article.get("title", "") + " " + article.get("description", "")).lower()
+            title = ((article.get("title") or "") + " " + (article.get("description") or "")).lower()
             if not any(kw in title for kw in keywords):
                 continue
             pos_count += sum(1 for w in positive_words if w in title)
