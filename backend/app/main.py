@@ -34,7 +34,11 @@ app = FastAPI(
 
 def _get_cors_origins() -> list[str]:
     from app.config import Settings
-    origins = ["http://localhost:3000", "http://localhost:5173"]
+    origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://sectoranalyzerfrontend2026.kopserf.workers.dev",
+    ]
     extra = Settings().cors_origins
     if extra:
         origins.extend([o.strip() for o in extra.split(",") if o.strip()])
