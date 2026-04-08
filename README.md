@@ -654,9 +654,94 @@ run_batch("pre_market")
 
 ---
 
-## Claude Code Integration
+## AI Packages — 프로젝트에서의 역할 상세
 
-### CLAUDE.md
+이 프로젝트는 9개의 AI 관련 패키지를 사용하며, 크게 **3개 계층**으로 나뉜다.
+
+### Layer 1: Core AI Engine — `anthropic`
+
+프로젝트의 **AI 두뇌**. Claude API를 직접 호출하여 자연어 분석 결과를 JSON 구조화 데이터로 변환한다.
+
+```python
+client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=4096,
+    messages=[{"role": "user", "content": prompt}],
+)
+```
+
+**4개 사용처와 각각의 기여:**
+
+| 사용처 | 입력 | 출력 | 기여 |
+|--------|------|------|------|
+| **Analyst Agent (Step 3)** | 매크로 환경 + 모멘텀 + 뉴스 + RS | JSON: regime, scoreboards, signals | 11개 섹터 교차 분석을 ~10초에 수행 |
+| **News Agent (AI Filter)** | 뉴스 기사 20~30건 | Noise/Context/Actionable 분류 | 뉴스 노이즈 90%+ 필터링 |
+| **Global Crisis Pipeline** | Google News 위기 헤드라인 20건 | 시장 파급력 상위 4~5건 + 한글 요약 | UN/지정학 리스크의 시장 영향 평가 |
+| **News Summarizer** | 영어 뉴스 기사 | 한글 1~2문장 요약 + 임팩트 점수 | 비영어권 사용자 접근성 향상 |
+
+**왜 anthropic SDK를 직접 사용하는가?** LangChain-Anthropic도 있지만, Analyst Agent에서는 프롬프트를 정밀하게 제어해야 하므로(JSON-only 응답 강제, 토큰 제한, temperature 미사용) SDK 직접 호출이 더 적합했다.
+
+### Layer 2: Agent Orchestration — `langgraph` + `langgraph-prebuilt` + `langgraph-checkpoint`
+
+3개 AI 에이전트를 **순차 파이프라인**으로 연결하는 오케스트레이션 레이어.
+
+```
+[Data Agent] ──MarketData──> [News Agent] ──NewsData──> [Analyst Agent] ──AnalysisResults──> [Persist]
+```
+
+| 패키지 | 역할 | 프로젝트 기여 |
+|--------|------|-------------|
+| **langgraph** | StateGraph 정의, 노드 실행 순서 제어 | `graph.ainvoke()` 한 줄로 전체 파이프라인 비동기 실행. 에이전트 간 데이터를 `MarketAnalysisState` TypedDict로 안전하게 전달 |
+| **langgraph-prebuilt** | 사전 정의된 노드/에지 패턴 | 보일러플레이트 코드 절감. 조건부 분기, 에러 핸들링 패턴 재사용 |
+| **langgraph-checkpoint** | 실행 중간 상태 저장 | 배치가 News Agent에서 실패해도, Data Agent 결과는 보존. 실패 지점부터 재시도 가능 |
+
+**왜 LangGraph인가?** 단순 함수 체이닝 대신 LangGraph를 선택한 이유:
+1. **상태 격리** — 한 에이전트 크래시가 전체 파이프라인을 오염시키지 않음
+2. **디버깅** — 각 노드의 입출력을 독립적으로 검사 가능
+3. **확장성** — 새 에이전트(예: Sentiment Agent) 추가 시 그래프에 노드만 삽입
+
+### Layer 3: LLM Abstraction — `langchain-core` + `langchain-anthropic` + `langchain`
+
+LangGraph 노드 내부의 기반 인프라를 제공하는 추상화 레이어.
+
+| 패키지 | 역할 | 프로젝트 기여 |
+|--------|------|-------------|
+| **langchain-core** | `RunnableConfig`, TypedDict 상태, 체인 인터페이스 | Analyst Agent의 `config` 파라미터로 Settings 주입, 테스트 시 mock 용이 |
+| **langchain-anthropic** | Claude 모델을 LangChain 인터페이스로 래핑 | 향후 GPT-4o, Gemini 등으로 모델 교체 시 이 레이어만 변경 (provider 추상화) |
+| **langchain** | 체인 구성, 도구 통합, 프롬프트 템플릿 | LangGraph와 LangSmith 연동의 기반 |
+
+### Observability — `langsmith` + `langgraph-sdk`
+
+| 패키지 | 역할 | 프로젝트 기여 |
+|--------|------|-------------|
+| **langsmith** | 에이전트 호출 트레이싱 (입출력, 지연시간, 토큰 비용) | "왜 이 배치에서 10개 시그널이 나왔지?" → 트레이스에서 Step 2 필터 통과 후보 확인 → 임계값 조정 |
+| **langgraph-sdk** | LangGraph 서버 모드 연동 | 현재 인프로세스 실행이지만, 향후 파이프라인 분리 배포 시 활용 |
+
+### AI 패키지 의존성 계보
+
+```
+anthropic (Claude API 직접 호출)
+    ↑
+langchain-anthropic (LangChain ↔ Anthropic 브릿지)
+    ↑
+langchain-core (RunnableConfig, State, Chain interface)
+    ↑
+langgraph (StateGraph 정의, 노드 실행)
+    ├── langgraph-prebuilt (공통 에이전트 패턴)
+    ├── langgraph-checkpoint (상태 체크포인팅)
+    └── langgraph-sdk (서버 모드 SDK)
+    ↑
+langsmith (실행 트레이싱, 관측성)
+```
+
+---
+
+## Claude Code Skills — 개발 과정에서의 역할 상세
+
+이 프로젝트는 **Claude Code** (Anthropic의 CLI AI 코딩 에이전트, Opus 4.6 1M context)로 개발되었다. 4일간 113+ 커밋, 5개 Phase를 완주하는 과정에서 **Superpowers Plugin Skills**가 핵심 워크플로우 역할을 했다.
+
+### CLAUDE.md — 프로젝트 컨텍스트 주입
 
 프로젝트 루트에 `CLAUDE.md` 파일로 Claude Code에게 프로젝트 컨텍스트를 제공:
 
@@ -666,7 +751,7 @@ run_batch("pre_market")
 - 환경변수 목록
 - 주요 참조 문서 경로
 
-### .claude/rules/
+### .claude/rules/ — 도메인별 규칙 파일
 
 | 파일 | 내용 |
 |------|------|
@@ -674,18 +759,132 @@ run_batch("pre_market")
 | `backend.md` | Python 컨벤션, FastAPI 패턴, LangGraph 상태 관리, Playwright 제한 |
 | `frontend.md` | TypeScript strict, 컴포넌트 구조, 차트 유형, 디자인 토큰, 색상 체계 |
 
-### Superpowers Plugin Skills
+### `superpowers:brainstorming` — 기능 설계의 출발점
 
-| 스킬 | 용도 |
+모든 주요 기능의 설계는 brainstorming 스킬에서 시작되었다. 이 스킬은 코드를 바로 작성하는 대신, **사용자의 의도를 파악하고 → 요구사항을 정리하고 → 설계 대안을 탐색한 후 → 합의된 방향으로 구현**하는 흐름을 강제한다.
+
+**대표적 사용 사례:**
+- **대시보드 4-Area 레이아웃 설계**: "섹터 로테이션 대시보드"라는 추상적 요구를 Macro Header / Sector Heatmap / News Feed / Deep Dive Chart 4영역으로 구체화
+- **AI 3-Step Validation 설계**: 단순히 "AI로 분석하자"가 아니라, Macro → RS+Momentum → Claude Final의 3단계 검증 파이프라인으로 구조화
+- **글로벌 위기 파이프라인**: ReliefWeb API 선정, Claude AI 필터링 기준, 대시보드 통합 방안까지 사전 설계
+
+**핵심 기여:** "무엇을 만들지"와 "어떻게 만들지"를 분리. 구현에 뛰어들기 전에 설계를 확정했기 때문에, 후반부 대규모 리팩토링이 거의 없었다.
+
+### `superpowers:writing-plans` — 5-Phase 구현 로드맵 수립
+
+brainstorming에서 도출된 설계를 **단계별 구현 계획**으로 전환하는 스킬.
+
+```
+Phase 1: 기반 (모델, 서비스, 설정)
+  ↓
+Phase 2: AI 파이프라인 (LangGraph 3-Agent)
+  ↓
+Phase 3: API + 스케줄러 (FastAPI, APScheduler)
+  ↓
+Phase 4: 프론트엔드 (4a: Scaffold → 4b: Area B+C → 4c: Area D)
+  ↓
+Phase 5: 통합 + 배포 (Docker, Render, E2E 테스트)
+```
+
+**핵심 기여:**
+- 각 Phase의 **산출물, 의존성, 검증 기준**을 미리 정의하여 작업 순서 최적화
+- Phase 4를 4a→4b→4c로 세분화하여 프론트엔드 병렬 작업 가능하게 설계
+- 전체 스펙 문서(`docs/superpowers/specs/`)를 자동 생성하여 세션 간 컨텍스트 유지
+
+### `superpowers:executing-plans` — 계획의 체계적 실행
+
+writing-plans에서 만든 로드맵을 **실제 코드로 전환**하는 실행 스킬. 각 단계를 TaskCreate로 등록하고, 완료 시 TaskUpdate로 체크하며, 리뷰 체크포인트에서 사용자와 합의하는 흐름을 따른다.
+
+**핵심 기여:**
+- Phase 1~5를 **4일 만에 113+ 커밋**으로 완주
+- 각 Phase 완료 시점에 리뷰를 거쳐 다음 Phase의 방향 조정
+- "이 작업은 뭐부터 해야 하지?" 고민 없이 계획대로 순차 실행
+
+### `superpowers:systematic-debugging` — 버그의 체계적 추적
+
+디버깅 스킬은 **증상 → 가설 → 검증 → 수정**의 구조화된 프로세스를 강제한다.
+
+**이 프로젝트에서 해결한 주요 버그들:**
+
+| 버그 | 증상 | 원인 | 해결 |
+|------|------|------|------|
+| EODHD API 402 | 모든 API 호출 실패 | 무료 티어 전면 유료 전환 | Yahoo Finance 전환 결정 |
+| Supabase HTTP/2 끊김 | 간헐적 ConnectionTerminated | Supabase 서버측 HTTP/2 리셋 | `_safe_execute()` 재시도 래퍼 |
+| Yahoo NaN 처리 | ^TNX Volume이 NaN | 인덱스 심볼은 거래량 없음 | NaN 필터링 추가 |
+| 섹터 중복 표시 | 같은 섹터가 2번 | `symbol` vs `etf_symbol` 키 불일치 | dedup 로직 키 수정 |
+| CORS 521 에러 | 로그인 실패 | Render 서버 다운 + CORS origin 미등록 | 서버 재시작 + origin 추가 |
+| 시그널 과잉 (10건) | 모든 섹터에 regime_shift | 사전 필터 임계값 0.2 너무 낮음 | v2: 임계값 0.4 + 3개 제한 |
+
+### `superpowers:verification-before-completion` — "됐다"고 말하기 전 검증
+
+작업 완료를 선언하기 전에 **실제로 동작하는지 검증**하는 스킬. 테스트 실행, 빌드 확인, 실제 API 호출 등을 강제한다.
+
+**검증 사례:**
+- 매 Phase 완료 시 `pytest` 실행 (최종 77+ 테스트 통과)
+- 파이프라인 구현 후 `curl -X POST /api/analysis/trigger` 실제 E2E 검증
+- 프론트엔드 빌드 후 `npm run build` + `tsc --noEmit` 타입 체크
+- Render 배포 후 실제 URL 접속 + Playwright MCP로 브라우저 테스트
+
+### `document-skills:frontend-design` — 금융 대시보드 UI 품질
+
+프론트엔드 컴포넌트를 만들 때 **디자인 품질을 보장**하는 스킬. "AI가 만든 티 나는" 제네릭 UI가 아니라, 금융 대시보드에 맞는 전문적 디자인을 구현하는 데 기여했다.
+
+**적용 사례:**
+- **Dark Theme 금융 대시보드**: `bg-slate-900` 기반 + 상승(green-500)/하락(red-500) 색상 체계
+- **52주 범위 Bullet Chart**: 어두운 회색 트랙 + emerald 진행률 바 + 흰색 현재가 마커
+- **스파크라인**: AreaChart + 그라데이션 + Y축 동적 스케일링 (flatline 해결)
+- **AI Event Signals**: 카드 기반 UI + ScoreBar + 펄스 인디케이터
+- **국면 배지**: Goldilocks(green), Reflation(amber), Stagflation(red), Deflation(blue) 색상 매핑
+
+### `document-skills:webapp-testing` — Playwright 브라우저 테스트
+
+배포된 웹 앱을 **실제 브라우저에서 테스트**하는 스킬. Playwright MCP를 통해 실제 사용자처럼 페이지를 탐색하고, 접근성 스냅샷을 캡처하여 UI 상태를 확인한다.
+
+**이번 프로젝트에서의 사용:**
+- Cloudflare 배포 후 로그인 페이지 접속 테스트
+- `admin` 계정으로 로그인 시도 → CORS 에러 실시간 발견
+- 브라우저 콘솔 에러 로그 분석으로 정확한 원인 파악 (preflight 요청 차단)
+
+### `superpowers:dispatching-parallel-agents` — 병렬 작업 가속
+
+독립적인 작업을 **여러 서브에이전트에 동시 분배**하여 개발 속도를 높이는 스킬. 한 에이전트가 백엔드를 구현하는 동안 다른 에이전트가 프론트엔드를 구현하는 식으로 병렬 처리한다.
+
+### `superpowers:finishing-a-development-branch` — 작업 마무리 절차
+
+구현 완료 후 **커밋 → 푸시 → 배포까지의 마무리 절차**를 가이드하는 스킬. conventional commit 메시지 작성, 변경 파일 리뷰, 불필요한 파일 제외 등을 체계적으로 수행한다.
+
+### Skills 워크플로우 요약
+
+```
+brainstorming (설계)
+  ↓
+writing-plans (계획)
+  ↓
+executing-plans (실행)
+  ├── frontend-design (UI 구현)
+  ├── dispatching-parallel-agents (병렬 처리)
+  └── systematic-debugging (버그 수정)
+  ↓
+verification-before-completion (검증)
+  ↓
+webapp-testing (브라우저 테스트)
+  ↓
+finishing-a-development-branch (마무리)
+```
+
+### 개발 통계
+
+| 항목 | 수치 |
 |------|------|
-| `brainstorming` | 기능 설계 전 아이디어 탐색 |
-| `writing-plans` | 구현 계획 작성 |
-| `executing-plans` | 계획 기반 구현 |
-| `test-driven-development` | TDD 워크플로우 |
-| `systematic-debugging` | 체계적 디버깅 |
-| `verification-before-completion` | 완료 전 검증 |
-| `code-reviewer` | 코드 리뷰 에이전트 |
-| `frontend-design` | 프론트엔드 디자인 |
+| 개발 기간 | 4일 (2026-04-05 ~ 2026-04-08) |
+| 총 커밋 | 113+ |
+| 백엔드 테스트 | 77+ |
+| 프론트엔드 컴포넌트 | 21개 |
+| API 엔드포인트 | 14개 |
+| AI 에이전트 | 3개 (Data, News, Analyst) |
+| DB 테이블 | 10+ |
+| Supabase 마이그레이션 | 3개 |
+| 사용된 Claude Code Skills | 9개 |
 
 ---
 
