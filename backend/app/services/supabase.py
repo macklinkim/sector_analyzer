@@ -82,13 +82,34 @@ class SupabaseService:
         return self._safe_execute(_q).data
 
     def get_latest_scoreboards(self, batch_type: str) -> list[dict]:
+        """가장 최근 batch의 scored_at 기준으로만 조회 + etf_symbol dedup."""
+        def _latest():
+            return (
+                self.client.table("sector_scoreboards")
+                .select("scored_at").eq("batch_type", batch_type)
+                .order("scored_at", desc=True).limit(1).execute()
+            )
+        latest = self._safe_execute(_latest)
+        if not latest.data:
+            return []
+        latest_ts = latest.data[0]["scored_at"]
+
         def _q():
             return (
                 self.client.table("sector_scoreboards")
-                .select("*").eq("batch_type", batch_type)
-                .order("scored_at", desc=True).limit(12).execute()
+                .select("*").eq("batch_type", batch_type).eq("scored_at", latest_ts)
+                .order("rank").execute()
             )
-        return self._safe_execute(_q).data
+        rows = self._safe_execute(_q).data
+        # etf_symbol dedup fallback
+        seen: set[str] = set()
+        deduped: list[dict] = []
+        for row in rows:
+            sym = row.get("etf_symbol", "")
+            if sym not in seen:
+                seen.add(sym)
+                deduped.append(row)
+        return deduped
 
     # --- 프론트엔드용 조회 메서드 ---
 

@@ -24,10 +24,17 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def classify_macro_environment(indicators: list[dict]) -> dict:
-    """Classify macro environment from US10Y, DXY, WTI, Gold directions."""
+    """Classify macro environment from US10Y, DXY, WTI, Gold directions and values."""
     dirs: dict[str, str] = {}
+    values: dict[str, dict] = {}
     for ind in indicators:
-        dirs[ind.get("indicator_name", "")] = ind.get("change_direction", "flat")
+        name = ind.get("indicator_name", "")
+        dirs[name] = ind.get("change_direction", "flat")
+        values[name] = {
+            "value": ind.get("value"),
+            "change_percent": ind.get("change_percent"),
+            "change_direction": ind.get("change_direction", "flat"),
+        }
 
     us10y = dirs.get("US 10Y Treasury", "flat")
     dxy = dirs.get("DXY Dollar Index", "flat")
@@ -90,6 +97,7 @@ def classify_macro_environment(indicators: list[dict]) -> dict:
         "risk_on_score": risk_on_score,
         "inflation_score": inflation_score,
         "indicator_dirs": dirs,
+        "indicator_values": values,
         "sector_bias": sector_bias,
     }
 
@@ -170,13 +178,109 @@ def compute_signal_candidates(
 
 
 # ---------------------------------------------------------------------------
+# Step 2.5: Cross-Validation — sentiment vs momentum divergence (rule-based)
+# ---------------------------------------------------------------------------
+
+def cross_validate_candidates(
+    candidates: list[dict],
+    news_sentiment: dict[str, float],
+) -> list[dict]:
+    """Detect sentiment-momentum divergence and adjust candidates.
+
+    | Sentiment | Momentum | Action                                       |
+    |-----------|----------|----------------------------------------------|
+    | positive  | up       | keep as-is                                   |
+    | positive  | down     | suppress signal (Divergence warning)         |
+    | negative  | up       | keep, confidence -0.1 (Contrarian)           |
+    | negative  | down     | keep as rotate_out candidate                 |
+    """
+    validated: list[dict] = []
+    for c in candidates:
+        sym = c["symbol"]
+        sentiment = news_sentiment.get(sym, 0.0)
+        m1w = c.get("momentum", {}).get("momentum_1w", 0)
+
+        sentiment_positive = sentiment > 0
+        momentum_up = m1w > 0
+
+        if sentiment_positive and not momentum_up:
+            # Divergence — suppress
+            c["flags"].append("센티먼트-가격괴리(억제)")
+            c["score"] = round(c["score"] * 0.5, 3)
+            c["cross_validation"] = "divergence_suppressed"
+        elif not sentiment_positive and momentum_up:
+            # Contrarian — keep but penalize confidence
+            c["flags"].append("역발상(confidence감점)")
+            c["cross_validation"] = "contrarian"
+        else:
+            c["cross_validation"] = "aligned"
+
+        validated.append(c)
+
+    validated.sort(key=lambda x: x["score"], reverse=True)
+    return validated
+
+
+def extract_news_sentiment(news_data: object) -> dict[str, float]:
+    """Extract per-sector sentiment from news data.
+
+    Simple heuristic: count positive/negative keywords in article titles
+    mentioning sector-related terms.
+    """
+    sector_keywords: dict[str, list[str]] = {
+        "XLK": ["tech", "technology", "ai", "semiconductor", "chip", "software"],
+        "XLF": ["bank", "financial", "fed", "interest rate", "lending"],
+        "XLE": ["oil", "energy", "crude", "opec", "gas", "drilling"],
+        "XLV": ["health", "pharma", "biotech", "drug", "fda", "medical"],
+        "XLI": ["industrial", "manufacturing", "infrastructure", "defense"],
+        "XLY": ["consumer", "retail", "amazon", "tesla", "spending"],
+        "XLP": ["staple", "grocery", "food", "beverage", "household"],
+        "XLU": ["utility", "utilities", "electric", "power", "grid"],
+        "XLB": ["material", "mining", "chemical", "steel", "commodity"],
+        "XLRE": ["real estate", "reit", "housing", "mortgage", "property"],
+        "XLC": ["communication", "media", "google", "meta", "streaming"],
+    }
+    positive_words = {"surge", "rally", "gain", "rise", "jump", "boost", "strong", "bullish", "up", "growth", "beat"}
+    negative_words = {"fall", "drop", "decline", "crash", "slump", "weak", "bearish", "down", "loss", "miss", "cut"}
+
+    sentiment: dict[str, float] = {}
+    if not news_data:
+        return sentiment
+
+    all_articles: list[dict] = []
+    for articles in news_data.articles_by_category.values():
+        all_articles.extend(articles)
+
+    for sym, keywords in sector_keywords.items():
+        pos_count = 0
+        neg_count = 0
+        for article in all_articles:
+            title = (article.get("title", "") + " " + article.get("description", "")).lower()
+            if not any(kw in title for kw in keywords):
+                continue
+            pos_count += sum(1 for w in positive_words if w in title)
+            neg_count += sum(1 for w in negative_words if w in title)
+
+        total = pos_count + neg_count
+        if total > 0:
+            sentiment[sym] = round((pos_count - neg_count) / total, 2)
+        else:
+            sentiment[sym] = 0.0
+
+    return sentiment
+
+
+# ---------------------------------------------------------------------------
 # Step 3: Claude AI final analysis with full context
 # ---------------------------------------------------------------------------
 
 ANALYSIS_PROMPT = """당신은 미국 주식 섹터 로테이션 전문 분석가입니다. 아래 데이터를 기반으로 **엄격한 3단계 검증**을 거쳐 시그널을 생성하세요.
 
-## 현재 매크로 환경
+## 현재 매크로 환경 (수치 포함)
 {macro_env_json}
+
+※ indicator_values에 각 지표의 실제 수치(value)와 변화율(change_percent)이 포함되어 있습니다.
+분석 시 반드시 이 수치를 인용하여 정량적 근거를 제시하세요.
 
 ## 시그널 후보 (사전 필터링 결과)
 {candidates_json}
@@ -213,6 +317,22 @@ ANALYSIS_PROMPT = """당신은 미국 주식 섹터 로테이션 전문 분석�
 3. **[WATCH]** RS Improving (개선 중):
    - 조건: RS 마이너스→플러스 전환 중, S&P500 대비 덜 하락
    - 확신도 0.3~0.5
+
+### 자금 흐름 일관성 규칙
+- rotate_in 시그널을 생성할 때, 반드시 대응하는 rotate_out 섹터를 명시하라.
+- "어디서 빠져서 어디로 들어가는가"를 한 문장으로 요약하라.
+- 3개 이상 섹터가 동시에 rotate_in이면 → 가장 강한 2개만 남기고 나머지 제거.
+- regime_shift는 배치당 최대 1건만 허용.
+
+### 다변수 분석 요구
+- 매크로 지표(금리, 달러, 유가, 금)의 **수치와 변화폭**을 근거에 반드시 인용하라.
+- "이 수치가 해당 섹터 밸류에이션에 미치는 영향을 정량적으로 설명하라."
+- 뉴스 센티먼트만으로 시그널을 생성하지 말 것 — 반드시 수치 지표가 뒷받침해야 함.
+
+### 교차 검증 결과
+- 아래 후보에는 센티먼트-모멘텀 교차 검증 결과(cross_validation)가 포함되어 있음.
+- "divergence_suppressed" 후보는 시그널 생성 금지.
+- "contrarian" 후보는 confidence를 0.1 감점하라.
 
 ### Fake Signal 필터링
 - 매크로 환경과 RS가 불일치하면 (예: 금리 상승기에 기술주 RS 상승) → Fake Signal로 제외
@@ -293,8 +413,13 @@ async def analyst_agent_node(state: MarketAnalysisState, config: RunnableConfig)
     momentum = market_data.momentum if market_data else {}
     rs = market_data.relative_strength if market_data else {}
     candidates = compute_signal_candidates(sectors, momentum, rs, macro_env)
-    top_candidates = [c for c in candidates if c["score"] >= 0.2]
+    top_candidates = [c for c in candidates if c["score"] >= 0.4]
     logger.info("Step 2 — %d/%d candidates passed pre-filter", len(top_candidates), len(candidates))
+
+    # ---- Step 2.5: Cross-Validation (sentiment vs momentum) ----
+    news_sentiment = extract_news_sentiment(news_data)
+    top_candidates = cross_validate_candidates(top_candidates, news_sentiment)
+    logger.info("Step 2.5 — Cross-validation applied, sentiment map: %s", news_sentiment)
 
     # ---- Step 3: Claude AI final analysis ----
     news_summary = ""
@@ -356,11 +481,23 @@ async def analyst_agent_node(state: MarketAnalysisState, config: RunnableConfig)
         sb["batch_type"] = batch_type
         sb["scored_at"] = now.isoformat()
 
-    # ---- Post-process signals: enforce limits ----
+    # ---- Post-process signals: enforce limits (v2) ----
     signals = result.get("rotation_signals", [])
-    # Filter: max 5 signals, remove low-confidence
+    # Filter: remove low-confidence
     signals = [s for s in signals if float(s.get("confidence_score", 0)) >= 0.3]
-    signals = signals[:5]
+    # regime_shift는 confidence >= 0.7만 허용
+    signals = [
+        s for s in signals
+        if s.get("signal_type") != "regime_shift" or float(s.get("confidence_score", 0)) >= 0.7
+    ]
+    # 최대 3개로 제한
+    signals = signals[:3]
+    # regime_shift는 배치당 1건만
+    regime_shifts = [s for s in signals if s.get("signal_type") == "regime_shift"]
+    if len(regime_shifts) > 1:
+        signals = [s for s in signals if s.get("signal_type") != "regime_shift"]
+        signals.insert(0, regime_shifts[0])
+        signals = signals[:3]
     for sig in signals:
         sig["batch_type"] = batch_type
         sig["detected_at"] = now.isoformat()
