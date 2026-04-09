@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { getCached, setCache } from "@/lib/utils";
 import type { GlobalCrisis, NewsArticleEnriched, NewsImpactAnalysis } from "@/types";
+
+const CACHE_KEY = "news_data";
 
 interface NewsData {
   articles: NewsArticleEnriched[];
@@ -10,13 +13,25 @@ interface NewsData {
   error: string | null;
 }
 
+interface CachedNewsData {
+  articles: NewsArticleEnriched[];
+  impacts: NewsImpactAnalysis[];
+  crises: GlobalCrisis[];
+}
+
 export function useNewsData(): NewsData & { refresh: () => void } {
-  const [data, setData] = useState<NewsData>({
-    articles: [],
-    impacts: [],
-    crises: [],
-    loading: true,
-    error: null,
+  const [data, setData] = useState<NewsData>(() => {
+    const cached = getCached<CachedNewsData>(CACHE_KEY);
+    if (cached) {
+      return { ...cached, loading: false, error: null };
+    }
+    return {
+      articles: [],
+      impacts: [],
+      crises: [],
+      loading: true,
+      error: null,
+    };
   });
 
   const fetchData = useCallback(async () => {
@@ -27,6 +42,7 @@ export function useNewsData(): NewsData & { refresh: () => void } {
         api.getNewsImpacts(),
         api.getGlobalCrises().catch(() => []),
       ]);
+      setCache(CACHE_KEY, { articles, impacts, crises });
       setData({ articles, impacts, crises, loading: false, error: null });
     } catch (err) {
       setData((prev) => ({
@@ -38,7 +54,10 @@ export function useNewsData(): NewsData & { refresh: () => void } {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    const cached = getCached<CachedNewsData>(CACHE_KEY);
+    if (!cached) {
+      fetchData();
+    }
   }, [fetchData]);
 
   return { ...data, refresh: fetchData };

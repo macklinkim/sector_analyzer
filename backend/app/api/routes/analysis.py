@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/analysis", tags=["analysis"])
 
 
-def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
+def _persist_results(result: MarketAnalysisState, svc: SupabaseService, batch_type: str = "manual") -> dict:
     """Save pipeline results to Supabase."""
     saved = {"indices": 0, "sectors": 0, "news": 0, "regime": False, "scoreboards": 0}
+    now_str = datetime.utcnow().isoformat() + "Z"
 
     market_data = result.get("market_data")
     if market_data:
-        now_str = datetime.utcnow().isoformat() + "Z"
         import math
         for idx in market_data.indices:
             try:
@@ -99,7 +99,6 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
 
     news_data = result.get("news_data")
     if news_data:
-        now_str = datetime.utcnow().isoformat() + "Z"
         for category_key, articles in news_data.articles_by_category.items():
             for a in articles:
                 try:
@@ -115,6 +114,32 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
                     saved["news"] += 1
                 except Exception as e:
                     logger.warning("Failed to save news: %s", e)
+
+        # Save AI-analyzed summaries
+        if news_data.article_summaries:
+            try:
+                summaries_rows = [
+                    {**s, "batch_type": batch_type, "analyzed_at": now_str}
+                    for s in news_data.article_summaries
+                ]
+                cnt = svc.upsert_news_summaries(summaries_rows)
+                saved["news_summaries"] = cnt
+                logger.info("Saved %d news summaries to DB", cnt)
+            except Exception as e:
+                logger.warning("Failed to save news summaries: %s", e)
+
+        # Save global crises
+        if news_data.global_crises:
+            try:
+                crises_rows = [
+                    {**c, "batch_type": batch_type, "analyzed_at": now_str}
+                    for c in news_data.global_crises
+                ]
+                cnt = svc.upsert_global_crises(crises_rows)
+                saved["global_crises"] = cnt
+                logger.info("Saved %d global crises to DB", cnt)
+            except Exception as e:
+                logger.warning("Failed to save global crises: %s", e)
 
     analysis = result.get("analysis_results")
     if analysis:
@@ -149,7 +174,7 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService) -> dict:
                     "reasoning": sig.get("reasoning", ""),
                     "supporting_news_urls": sig.get("supporting_news_urls", []),
                     "batch_type": sig.get("batch_type", batch_type),
-                    "detected_at": sig.get("detected_at", now_str if 'now_str' in dir() else datetime.utcnow().isoformat() + "Z"),
+                    "detected_at": sig.get("detected_at", now_str),
                 }
                 svc.client.table("rotation_signals").insert(db_sig).execute()
                 saved["signals"] = saved.get("signals", 0) + 1
@@ -173,7 +198,7 @@ async def run_pipeline(batch_type: str = "manual") -> dict:
     # Persist to Supabase
     try:
         svc = SupabaseService(Settings())
-        saved = _persist_results(result, svc)
+        saved = _persist_results(result, svc, batch_type=batch_type)
         logger.info("Pipeline results saved: %s", saved)
     except Exception as e:
         logger.error("Failed to persist results: %s", e)

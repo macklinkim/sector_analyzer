@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { getCached, setCache } from "@/lib/utils";
 import type { MarketReport, RotationSignal, SectorScoreboard } from "@/types";
+
+const CACHE_KEY = "analysis_data";
 
 interface AnalysisData {
   scoreboards: SectorScoreboard[];
@@ -10,13 +13,25 @@ interface AnalysisData {
   error: string | null;
 }
 
+interface CachedAnalysisData {
+  scoreboards: SectorScoreboard[];
+  signals: RotationSignal[];
+  report: MarketReport | null;
+}
+
 export function useAnalysisData(): AnalysisData & { refresh: () => void } {
-  const [data, setData] = useState<AnalysisData>({
-    scoreboards: [],
-    signals: [],
-    report: null,
-    loading: true,
-    error: null,
+  const [data, setData] = useState<AnalysisData>(() => {
+    const cached = getCached<CachedAnalysisData>(CACHE_KEY);
+    if (cached) {
+      return { ...cached, loading: false, error: null };
+    }
+    return {
+      scoreboards: [],
+      signals: [],
+      report: null,
+      loading: true,
+      error: null,
+    };
   });
 
   const fetchData = useCallback(async () => {
@@ -27,6 +42,7 @@ export function useAnalysisData(): AnalysisData & { refresh: () => void } {
         api.getSignals(),
         api.getReport().catch(() => null),
       ]);
+      setCache(CACHE_KEY, { scoreboards, signals, report });
       setData({ scoreboards, signals, report, loading: false, error: null });
     } catch (err) {
       setData((prev) => ({
@@ -38,7 +54,10 @@ export function useAnalysisData(): AnalysisData & { refresh: () => void } {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    const cached = getCached<CachedAnalysisData>(CACHE_KEY);
+    if (!cached) {
+      fetchData();
+    }
   }, [fetchData]);
 
   return { ...data, refresh: fetchData };

@@ -259,3 +259,57 @@ class SupabaseService:
                 .execute()
             )
         return self._safe_execute(_q).data
+
+    # --- News Summaries (AI 분석 결과) ---
+
+    def upsert_news_summaries(self, rows: list[dict]) -> int:
+        if not rows:
+            return 0
+        self._safe_execute(
+            lambda: self.client.table("news_summaries")
+            .upsert(rows, on_conflict="article_url")
+            .execute()
+        )
+        return len(rows)
+
+    def get_latest_news_summaries(self, limit: int = 20) -> list[dict]:
+        def _q():
+            return (
+                self.client.table("news_summaries")
+                .select("*")
+                .order("impact_score", desc=True)
+                .order("analyzed_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+        return self._safe_execute(_q).data
+
+    # --- Global Crises (AI 필터링 위기) ---
+
+    def upsert_global_crises(self, rows: list[dict]) -> int:
+        if not rows:
+            return 0
+        # Clear old crises, insert fresh batch
+        self._safe_execute(
+            lambda: self.client.table("global_crises")
+            .delete()
+            .neq("id", "00000000-0000-0000-0000-000000000000")
+            .execute()
+        )
+        self._safe_execute(
+            lambda: self.client.table("global_crises")
+            .insert(rows)
+            .execute()
+        )
+        return len(rows)
+
+    def get_latest_global_crises(self) -> list[dict]:
+        def _q():
+            return (
+                self.client.table("global_crises")
+                .select("*")
+                .order("impact_score", desc=True)
+                .limit(10)
+                .execute()
+            )
+        return self._safe_execute(_q).data

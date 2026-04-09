@@ -12,6 +12,8 @@ import { NewsImpactFeed } from "@/components/news/NewsImpactFeed";
 import { EconomicCalendar } from "@/components/news/EconomicCalendar";
 import { MultiChartGrid } from "@/components/chart/MultiChartGrid";
 import { AiScreenerTable } from "@/components/screener/AiScreenerTable";
+import { BusinessCycleClock } from "@/components/header/BusinessCycleClock";
+import { RelativeRotationGraph } from "@/components/chart/RelativeRotationGraph";
 
 function Dashboard() {
   const { name } = useAuth();
@@ -33,6 +35,11 @@ function Dashboard() {
           lastUpdated={marketData.lastUpdated}
         />
       </header>
+
+      {/* Business Cycle Clock — below header */}
+      <div className="px-4 pt-4">
+        <BusinessCycleClock regime={marketData.regime} loading={marketData.loading} />
+      </div>
 
       {/* Area B + C: Side by side */}
       <main className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
@@ -75,6 +82,10 @@ function Dashboard() {
 
       {/* Area D: Deep Dive & Screener */}
       <section className="space-y-4 px-4 pb-4">
+        <RelativeRotationGraph
+          sectors={marketData.sectors}
+          loading={marketData.loading}
+        />
         <MultiChartGrid
           sectors={marketData.sectors}
           signals={analysisData.signals}

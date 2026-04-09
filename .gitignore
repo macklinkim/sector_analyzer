@@ -22,3 +22,16 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Images
+*.png
+
+# Logs
+*.log
+
+# Configs
+*.yml
+
+# Secrets
+KeysValues
+TRIGGER_API_KEY

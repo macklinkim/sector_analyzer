@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { getCached, setCache } from "@/lib/utils";
 import type { EconomicIndicator, MacroRegime, MarketIndex, Sector } from "@/types";
+
+const CACHE_KEY = "market_data";
 
 interface MarketData {
   indices: MarketIndex[];
@@ -12,15 +15,29 @@ interface MarketData {
   lastUpdated: string | null;
 }
 
+interface CachedMarketData {
+  indices: MarketIndex[];
+  sectors: Sector[];
+  indicators: EconomicIndicator[];
+  regime: MacroRegime | null;
+  lastUpdated: string;
+}
+
 export function useMarketData(): MarketData & { refresh: () => void } {
-  const [data, setData] = useState<MarketData>({
-    indices: [],
-    sectors: [],
-    indicators: [],
-    regime: null,
-    loading: true,
-    error: null,
-    lastUpdated: null,
+  const [data, setData] = useState<MarketData>(() => {
+    const cached = getCached<CachedMarketData>(CACHE_KEY);
+    if (cached) {
+      return { ...cached, loading: false, error: null };
+    }
+    return {
+      indices: [],
+      sectors: [],
+      indicators: [],
+      regime: null,
+      loading: true,
+      error: null,
+      lastUpdated: null,
+    };
   });
 
   const fetchData = useCallback(async () => {
@@ -32,6 +49,8 @@ export function useMarketData(): MarketData & { refresh: () => void } {
         api.getIndicators(),
         api.getRegime().catch(() => null),
       ]);
+      const lastUpdated = new Date().toISOString();
+      setCache(CACHE_KEY, { indices, sectors, indicators, regime, lastUpdated });
       setData({
         indices,
         sectors,
@@ -39,7 +58,7 @@ export function useMarketData(): MarketData & { refresh: () => void } {
         regime,
         loading: false,
         error: null,
-        lastUpdated: new Date().toISOString(),
+        lastUpdated,
       });
     } catch (err) {
       setData((prev) => ({
@@ -51,7 +70,10 @@ export function useMarketData(): MarketData & { refresh: () => void } {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    const cached = getCached<CachedMarketData>(CACHE_KEY);
+    if (!cached) {
+      fetchData();
+    }
   }, [fetchData]);
 
   return { ...data, refresh: fetchData };

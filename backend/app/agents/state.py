@@ -24,6 +24,7 @@ class MarketData:
 class NewsData:
     articles_by_category: dict[str, list[dict]] = field(default_factory=dict)
     article_summaries: list[dict] = field(default_factory=list)
+    global_crises: list[dict] = field(default_factory=list)
 
 
 @dataclass

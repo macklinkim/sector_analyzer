@@ -3,6 +3,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -95,6 +96,12 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
             />
             <ReferenceLine y={0} stroke="var(--color-muted-foreground)" strokeWidth={1.5} />
             <Bar dataKey="rs" radius={[4, 4, 0, 0]}>
+              <LabelList
+                dataKey="rs"
+                position="top"
+                formatter={(v: unknown) => { const n = Number(v); return `${n > 0 ? "+" : ""}${n.toFixed(1)}%`; }}
+                style={{ fontSize: 10, fontWeight: 600, fill: "hsl(var(--muted-foreground))" }}
+              />
               {data.map((entry) => (
                 <Cell
                   key={entry.symbol}

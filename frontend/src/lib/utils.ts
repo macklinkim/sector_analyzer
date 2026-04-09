@@ -32,3 +32,34 @@ export function getImpactColor(score: number): string {
   if (score >= 4) return "bg-impact-medium text-black";
   return "bg-impact-low text-white";
 }
+
+// --- localStorage cache helpers ---
+
+const DEFAULT_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+interface CacheEntry<T> {
+  data: T;
+  ts: number;
+}
+
+export function getCached<T>(key: string, ttlMs: number = DEFAULT_CACHE_TTL_MS): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const entry: CacheEntry<T> = JSON.parse(raw);
+    if (Date.now() - entry.ts < ttlMs) return entry.data;
+    localStorage.removeItem(key);
+  } catch {
+    localStorage.removeItem(key);
+  }
+  return null;
+}
+
+export function setCache<T>(key: string, data: T): void {
+  try {
+    const entry: CacheEntry<T> = { data, ts: Date.now() };
+    localStorage.setItem(key, JSON.stringify(entry));
+  } catch {
+    // quota exceeded — silently ignore
+  }
+}
