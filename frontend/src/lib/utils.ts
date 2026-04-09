@@ -35,19 +35,24 @@ export function getImpactColor(score: number): string {
 
 // --- localStorage cache helpers ---
 
-const DEFAULT_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
 interface CacheEntry<T> {
   data: T;
   ts: number;
 }
 
-export function getCached<T>(key: string, ttlMs: number = DEFAULT_CACHE_TTL_MS): T | null {
+/** Check if cache was stored before the most recent :00 boundary */
+function isExpired(storedTs: number): boolean {
+  const now = new Date();
+  const currentHourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0).getTime();
+  return storedTs < currentHourStart;
+}
+
+export function getCached<T>(key: string): T | null {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
     const entry: CacheEntry<T> = JSON.parse(raw);
-    if (Date.now() - entry.ts < ttlMs) return entry.data;
+    if (!isExpired(entry.ts)) return entry.data;
     localStorage.removeItem(key);
   } catch {
     localStorage.removeItem(key);

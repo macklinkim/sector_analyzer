@@ -3,7 +3,7 @@ import { Treemap, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSectorLabel } from "@/lib/i18n";
-import { formatPercent } from "@/lib/utils";
+import { formatPercent, getCached, setCache } from "@/lib/utils";
 import { api } from "@/lib/api";
 
 interface StockData {
@@ -79,31 +79,21 @@ export function SectorStockTreemap({ selectedSector, etfSymbol }: SectorStockTre
   const [stocks, setStocks] = useState<StockData[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
-
   const fetchStocks = useCallback(async () => {
     if (!etfSymbol) return;
 
-    // Check localStorage cache
     const cacheKey = `sector_stocks_${etfSymbol}`;
-    const cached = localStorage.getItem(cacheKey);
+    const cached = getCached<StockData[]>(cacheKey);
     if (cached) {
-      try {
-        const { data, ts } = JSON.parse(cached) as { data: StockData[]; ts: number };
-        if (Date.now() - ts < CACHE_TTL_MS) {
-          setStocks(data);
-          return;
-        }
-      } catch {
-        // corrupted cache, fetch fresh
-      }
+      setStocks(cached);
+      return;
     }
 
     setLoading(true);
     try {
       const data = await api.getSectorStocks(etfSymbol);
       setStocks(data);
-      localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
+      setCache(cacheKey, data);
     } catch {
       // ignore
     } finally {
