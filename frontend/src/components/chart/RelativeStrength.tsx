@@ -98,9 +98,16 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
             <Bar dataKey="rs" radius={[4, 4, 0, 0]}>
               <LabelList
                 dataKey="rs"
-                position="top"
-                formatter={(v: unknown) => { const n = Number(v); return `${n > 0 ? "+" : ""}${n.toFixed(1)}%`; }}
-                style={{ fontSize: 10, fontWeight: 600, fill: "hsl(var(--muted-foreground))" }}
+                content={(props) => {
+                  const n = Number(props.value);
+                  const cx = Number(props.x ?? 0) + Number(props.width ?? 0) / 2;
+                  const cy = n >= 0 ? Number(props.y ?? 0) - 6 : Number(props.y ?? 0) + Number(props.height ?? 0) + 12;
+                  return (
+                    <text x={cx} y={cy} textAnchor="middle" fontSize={10} fontWeight={600} fill="hsl(var(--muted-foreground))">
+                      {`${n > 0 ? "+" : ""}${n.toFixed(1)}%`}
+                    </text>
+                  );
+                }}
               />
               {data.map((entry) => (
                 <Cell

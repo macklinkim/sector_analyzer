@@ -94,6 +94,8 @@ function Dashboard() {
         <AiScreenerTable
           scoreboards={analysisData.scoreboards}
           loading={analysisData.loading}
+          selectedSector={selectedSector}
+          onSectorClick={setSelectedSector}
         />
       </section>
 

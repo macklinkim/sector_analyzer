@@ -9,6 +9,8 @@ import type { SectorScoreboard } from "@/types";
 interface AiScreenerTableProps {
   scoreboards: SectorScoreboard[];
   loading: boolean;
+  selectedSector?: string | null;
+  onSectorClick?: (sectorName: string) => void;
 }
 
 function getRecommendationVariant(rec: string): "bullish" | "bearish" | "default" {
@@ -17,7 +19,7 @@ function getRecommendationVariant(rec: string): "bullish" | "bearish" | "default
   return "default";
 }
 
-export function AiScreenerTable({ scoreboards, loading }: AiScreenerTableProps) {
+export function AiScreenerTable({ scoreboards, loading, selectedSector, onSectorClick }: AiScreenerTableProps) {
   if (loading) {
     return (
       <Card>
@@ -55,7 +57,11 @@ export function AiScreenerTable({ scoreboards, loading }: AiScreenerTableProps) 
               {sorted.map((sb) => (
                 <tr
                   key={sb.etf_symbol}
-                  className="border-b border-border/50 transition-colors hover:bg-muted/20"
+                  className={cn(
+                    "border-b border-border/50 transition-colors hover:bg-muted/20 cursor-pointer",
+                    selectedSector === sb.sector_name && "bg-muted/30 ring-1 ring-inset ring-primary/30"
+                  )}
+                  onClick={() => onSectorClick?.(sb.sector_name)}
                 >
                   <td className="px-2 py-2 font-mono text-xs text-muted-foreground">
                     #{sb.rank}

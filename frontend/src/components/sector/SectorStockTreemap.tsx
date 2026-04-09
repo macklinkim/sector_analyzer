@@ -36,12 +36,15 @@ interface TreemapContentProps {
   width: number;
   height: number;
   name: string;
+  companyName: string;
   change_p: number;
   close: number;
 }
 
-function CustomContent({ x, y, width, height, name, change_p, close }: TreemapContentProps) {
+function CustomContent({ x, y, width, height, name, companyName, change_p }: TreemapContentProps) {
   if (width < 35 || height < 25) return null;
+
+  const shortName = companyName ? companyName.slice(0, 7) : "";
 
   return (
     <g>
@@ -52,15 +55,17 @@ function CustomContent({ x, y, width, height, name, change_p, close }: TreemapCo
       />
       {width > 50 && (
         <>
-          <text x={x + width / 2} y={y + height / 2 - 8} textAnchor="middle"
+          <text x={x + width / 2} y={y + height / 2 - (shortName ? 12 : 8)} textAnchor="middle"
             fill="white" fontSize={width > 80 ? 11 : 9} fontWeight="bold">
             {name}
           </text>
-          <text x={x + width / 2} y={y + height / 2 + 5} textAnchor="middle"
-            fill="white" fontSize={9}>
-            ${close > 0 ? close.toFixed(0) : ""}
-          </text>
-          <text x={x + width / 2} y={y + height / 2 + 17} textAnchor="middle"
+          {shortName && (
+            <text x={x + width / 2} y={y + height / 2 - 1} textAnchor="middle"
+              fill="rgba(255,255,255,0.6)" fontSize={7}>
+              {shortName}
+            </text>
+          )}
+          <text x={x + width / 2} y={y + height / 2 + 10} textAnchor="middle"
             fill="rgba(255,255,255,0.8)" fontSize={8}>
             {formatPercent(change_p)}
           </text>
@@ -140,6 +145,7 @@ export function SectorStockTreemap({ selectedSector, etfSymbol }: SectorStockTre
     .filter((s) => s.symbol !== "ETC" && s.close > 0)
     .map((s) => ({
       name: s.symbol,
+      companyName: s.name,
       size: s.market_cap || s.volume || 1,
       change_p: s.change_p,
       close: s.close,
@@ -149,6 +155,7 @@ export function SectorStockTreemap({ selectedSector, etfSymbol }: SectorStockTre
   if (etc) {
     treemapData.push({
       name: etc.name,
+      companyName: "",
       size: 1,
       change_p: 0,
       close: 0,
@@ -169,7 +176,7 @@ export function SectorStockTreemap({ selectedSector, etfSymbol }: SectorStockTre
               data={treemapData}
               dataKey="size"
               stroke="none"
-              content={<CustomContent x={0} y={0} width={0} height={0} name="" change_p={0} close={0} />}
+              content={<CustomContent x={0} y={0} width={0} height={0} name="" companyName="" change_p={0} close={0} />}
             />
           </ResponsiveContainer>
         )}

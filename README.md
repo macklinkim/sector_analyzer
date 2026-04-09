@@ -1186,6 +1186,30 @@ curl -X POST http://localhost:8000/api/analysis/trigger \
 
 ---
 
+## Changelog (2026-04-09)
+
+### DB 캐싱 전환 — 실시간 외부 API 호출 제거
+
+- **뉴스 요약 (summaries):** 매 요청마다 Claude API를 호출하던 방식에서, 파이프라인 배치 실행 시 AI 분석 결과를 `news_summaries` 테이블에 저장하고 API는 DB에서만 읽도록 전환
+- **글로벌 위기 (crises):** Google News RSS + Claude 실시간 필터링을 제거, 파이프라인에서 `global_crises` 테이블에 미리 저장
+- **Rotation Signals 버그 수정:** `_persist_results`에서 `batch_type` 변수 스코프 오류로 signals가 DB에 저장되지 않던 문제 해결
+- **프론트엔드 localStorage 캐싱:** 모든 데이터 훅 (`useMarketData`, `useNewsData`, `useAnalysisData`)에 TTL 1시간 localStorage 캐싱 적용 (기존 SectorStockTreemap 패턴 확장)
+- **Supabase 신규 테이블:** `news_summaries`, `global_crises`
+
+### 신규 위젯
+
+- **Business Cycle Clock:** 4국면(Goldilocks/Reflation/Stagflation/Deflation) 원형 시계 위젯. Framer Motion 포인터 애니메이션, Lucide 아이콘, 국면별 확률(%) 표시 및 추천 섹터 라벨
+- **Relative Rotation Graph (RRG):** RS-Ratio(X) x RS-Momentum(Y) 4분면 scatter chart. 섹터별 ETF 심볼 LabelList 자동 표시, Leading/Improving/Weakening/Lagging 사분면 배경색 구분
+
+### UI/UX 개선
+
+- **Heatmap ↔ AI Screener 연동:** Heatmap 클릭 시 AI Screener 테이블 해당 행 하이라이트, 테이블 행 클릭 시 Heatmap 섹터 선택 동기화
+- **모멘텀 기간 토글:** 1D/1W/1M/3M/6M/1Y 버튼으로 표시할 기간을 자유롭게 선택 (기본: 1W/1M/3M/1Y)
+- **상대 강도 수치 라벨:** 막대 방향 끝(양수 위, 음수 아래)에 ±n.n% 수치 표시
+- **Treemap 회사명 표시:** 종목코드 아래에 회사명 앞 7글자를 작은 글씨로 추가 표기
+
+---
+
 ## Disclaimer
 
 **본 분석은 AI의 추론이며, 실제 투자 판단의 근거로 사용할 수 없습니다.**
