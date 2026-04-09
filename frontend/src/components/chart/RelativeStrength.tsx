@@ -100,8 +100,15 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
                 dataKey="rs"
                 content={(props) => {
                   const n = Number(props.value);
-                  const cx = Number(props.x ?? 0) + Number(props.width ?? 0) / 2;
-                  const cy = n >= 0 ? Number(props.y ?? 0) - 6 : Number(props.y ?? 0) + Number(props.height ?? 0) + 12;
+                  if (n === 0) return null;
+                  const x = Number(props.x ?? 0);
+                  const y = Number(props.y ?? 0);
+                  const w = Number(props.width ?? 0);
+                  const h = Number(props.height ?? 0);
+                  const cx = x + w / 2;
+                  // For positive bars: label above the bar top
+                  // For negative bars: label below the bar bottom
+                  const cy = n >= 0 ? y - 5 : y + Math.abs(h) + 12;
                   return (
                     <text x={cx} y={cy} textAnchor="middle" fontSize={10} fontWeight={600} fill="hsl(var(--muted-foreground))">
                       {`${n > 0 ? "+" : ""}${n.toFixed(1)}%`}
