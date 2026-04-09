@@ -4,7 +4,7 @@ import logging
 
 import httpx
 import feedparser
-from anthropic import AsyncAnthropic
+import anthropic
 
 from app.config import Settings
 
@@ -67,9 +67,9 @@ async def filter_crises_with_ai(headlines: list[dict], settings: Settings) -> li
   }}
 ]"""
 
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     try:
-        response = await client.messages.create(
+        response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=2000,
             messages=[{"role": "user", "content": prompt}],

@@ -2,7 +2,7 @@
 import json
 import logging
 
-from anthropic import AsyncAnthropic
+import anthropic
 from langchain_core.runnables import RunnableConfig
 
 from app.agents.state import MarketAnalysisState, NewsData
@@ -49,7 +49,7 @@ async def _analyze_news_with_ai(
     if not articles:
         return []
 
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
     titles_text = "\n".join(
         f"{i+1}. [{a.get('category','')}] {a.get('title','')} - "
@@ -61,7 +61,7 @@ async def _analyze_news_with_ai(
     prompt = NEWS_ANALYSIS_PROMPT.format(titles_text=titles_text)
 
     try:
-        response = await client.messages.create(
+        response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=3000,
             messages=[{"role": "user", "content": prompt}],
