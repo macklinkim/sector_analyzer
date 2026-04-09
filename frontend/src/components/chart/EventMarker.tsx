@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getSectorLabel } from "@/lib/i18n";
 import type { RotationSignal } from "@/types";
 
 interface EventMarkerProps {
@@ -85,6 +86,9 @@ export function EventMarker({ signals }: EventMarkerProps) {
                     </Badge>
                     <span className="text-sm font-semibold text-foreground truncate">
                       {sector}
+                      <span className="ml-1 text-xs font-normal text-muted-foreground">
+                        {getSectorLabel(sector)}
+                      </span>
                     </span>
                   </div>
                   <div className="mt-1 flex items-center gap-3">

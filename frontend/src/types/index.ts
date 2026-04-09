@@ -47,8 +47,8 @@ export interface NewsArticle {
   source: string;
   url: string;
   summary: string | null;
-  published_at: string;
-  collected_at: string;
+  published_at?: string;
+  collected_at?: string;
 }
 
 export interface NewsArticleEnriched extends NewsArticle {
@@ -59,6 +59,7 @@ export interface NewsArticleEnriched extends NewsArticle {
   news_category: string | null;  // A_MACRO, B_INDUSTRY, C_CORPORATE
   expert_insight: string | null;
   action_item: string | null;
+  analyzed_at?: string;
 }
 
 export interface NewsImpactAnalysis {

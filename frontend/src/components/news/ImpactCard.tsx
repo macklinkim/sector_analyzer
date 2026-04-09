@@ -8,8 +8,11 @@ interface ImpactCardProps {
   impact?: NewsImpactAnalysis;
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+function timeAgo(dateStr: string | null | undefined): string {
+  if (!dateStr) return "";
+  const time = new Date(dateStr).getTime();
+  if (isNaN(time)) return "";
+  const diff = Date.now() - time;
   const hours = Math.floor(diff / 3600000);
   if (hours < 1) return "방금 전";
   if (hours < 24) return `${hours}시간 전`;
@@ -52,7 +55,7 @@ export function ImpactCard({ article, impact }: ImpactCardProps) {
           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
             <span>{article.source}</span>
             <span>·</span>
-            <span>{timeAgo(article.published_at)}</span>
+            <span>{timeAgo(article.published_at ?? article.analyzed_at)}</span>
           </div>
 
           {article.summary_ko && (

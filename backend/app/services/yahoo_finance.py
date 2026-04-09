@@ -76,6 +76,22 @@ def _download_quotes(symbols: list[str], period: str = "5d") -> dict[str, dict]:
     return results
 
 
+def _fetch_short_names(symbols: list[str]) -> dict[str, str]:
+    """Fetch short company names via yfinance Tickers."""
+    names: dict[str, str] = {}
+    try:
+        tickers = yf.Tickers(" ".join(symbols))
+        for sym in symbols:
+            try:
+                info = tickers.tickers[sym].info
+                names[sym] = info.get("shortName") or info.get("longName") or sym
+            except Exception:
+                names[sym] = sym
+    except Exception as e:
+        logger.warning("Failed to fetch short names: %s", e)
+    return names
+
+
 def _download_history(symbol: str, period: str = "1mo") -> list[dict]:
     """Synchronous history download for a single symbol."""
     try:
@@ -240,6 +256,7 @@ class YahooFinanceService:
 
     async def fetch_sector_stocks(self, symbols: list[str]) -> list[dict]:
         quotes = await self._run(_download_quotes, symbols, "5d")
+        names = await self._run(_fetch_short_names, symbols)
         results = []
         for sym in symbols:
             q = quotes.get(sym)
@@ -255,7 +272,7 @@ class YahooFinanceService:
                 volume = 0
             results.append({
                 "symbol": sym,
-                "name": sym,
+                "name": names.get(sym, sym),
                 "close": close,
                 "change_p": change_p,
                 "volume": volume,
