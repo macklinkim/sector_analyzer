@@ -77,6 +77,18 @@ def _download_quotes(symbols: list[str], period: str = "5d") -> dict[str, dict]:
 
 
 
+def _fetch_name_fallback(symbols: list[str]) -> dict[str, str]:
+    """Fallback: fetch company names from Yahoo for symbols not in STOCK_NAMES."""
+    names: dict[str, str] = {}
+    for sym in symbols:
+        try:
+            info = yf.Ticker(sym).info
+            names[sym] = info.get("shortName") or info.get("longName") or sym
+        except Exception:
+            names[sym] = sym
+    return names
+
+
 def _download_history(symbol: str, period: str = "1mo") -> list[dict]:
     """Synchronous history download for a single symbol."""
     try:
@@ -243,6 +255,13 @@ class YahooFinanceService:
         from app.services.sector_stocks import STOCK_NAMES
 
         quotes = await self._run(_download_quotes, symbols, "5d")
+
+        # Collect symbols missing from static mapping for Yahoo fallback
+        missing = [s for s in symbols if s not in STOCK_NAMES]
+        yahoo_names: dict[str, str] = {}
+        if missing:
+            yahoo_names = await self._run(_fetch_name_fallback, missing)
+
         results = []
         for sym in symbols:
             q = quotes.get(sym)
@@ -256,9 +275,10 @@ class YahooFinanceService:
                 continue
             if volume != volume:
                 volume = 0
+            name = STOCK_NAMES.get(sym) or yahoo_names.get(sym, sym)
             results.append({
                 "symbol": sym,
-                "name": STOCK_NAMES.get(sym, sym),
+                "name": name,
                 "close": close,
                 "change_p": change_p,
                 "volume": volume,
