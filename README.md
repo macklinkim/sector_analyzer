@@ -1207,6 +1207,18 @@ curl -X POST http://localhost:8000/api/analysis/trigger \
 - **모멘텀 기간 토글:** 1D/1W/1M/3M/6M/1Y 버튼으로 표시할 기간을 자유롭게 선택 (기본: 1W/1M/3M/1Y)
 - **상대 강도 수치 라벨:** 막대 방향 끝(양수 위, 음수 아래)에 ±n.n% 수치 표시
 - **Treemap 회사명 표시:** 종목코드 아래에 회사명 앞 7글자를 작은 글씨로 추가 표기
+- **AI Rotation Signal 한글명:** 섹터 ETF 심볼 옆에 한글 섹터명 표시
+- **뉴스 날짜 NaN 수정:** `published_at` 없는 경우 `analyzed_at` fallback
+
+### 종목 회사명 정적 매핑
+
+- **STOCK_NAMES:** 섹터당 20개, 총 200개 종목 풀네임을 정적 매핑 (`sector_stocks.py`)
+- **Yahoo fallback:** 매핑에 없는 종목만 개별 `yf.Ticker().info` 조회 (rate limit 최소화)
+- **DB 저장:** 파이프라인 실행 시 `sector_stocks.name`에 풀네임 저장
+
+### localStorage 캐시 정책
+
+- **매 정시(XX:00) flush:** TTL 기반에서 시각 기준 만료로 변경. 매 시 정각에 모든 캐시가 만료되어 DB에서 새로 fetch
 
 ---
 
