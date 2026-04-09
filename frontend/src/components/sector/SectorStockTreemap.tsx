@@ -30,45 +30,39 @@ function getHeatmapColor(changePercent: number): string {
   return "#b91c1c";
 }
 
-interface TreemapContentProps {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  name: string;
-  companyName: string;
-  change_p: number;
-  close: number;
-}
-
-function CustomContent({ x, y, width, height, name, companyName, change_p }: TreemapContentProps) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function CustomContent(props: any) {
+  const { x, y, width, height, name, change_p } = props;
   if (width < 35 || height < 25) return null;
 
-  const shortName = companyName ? companyName.slice(0, 7) : "";
+  // Recharts passes all data fields — look up company name from the stockMap
+  const companyName: string = props.companyName ?? "";
+  const shortName = companyName && companyName !== name ? companyName.slice(0, 7) : "";
+  const pct = formatPercent(change_p ?? 0);
 
   return (
     <g>
       <rect
         x={x} y={y} width={width} height={height} rx={3}
-        fill={getHeatmapColor(change_p)}
+        fill={getHeatmapColor(change_p ?? 0)}
         stroke="var(--color-background)" strokeWidth={2}
       />
       {width > 50 && (
         <>
-          <text x={x + width / 2} y={y + height / 2 - (shortName ? 12 : 8)} textAnchor="middle"
+          <text x={x + width / 2} y={y + height / 2 - 6} textAnchor="middle"
             fill="white" fontSize={width > 80 ? 11 : 9} fontWeight="bold">
             {name}
           </text>
+          <text x={x + width / 2} y={y + height / 2 + 6} textAnchor="middle"
+            fill="rgba(255,255,255,0.8)" fontSize={8}>
+            {pct}
+          </text>
           {shortName && (
-            <text x={x + width / 2} y={y + height / 2 - 1} textAnchor="middle"
-              fill="rgba(255,255,255,0.6)" fontSize={7}>
+            <text x={x + width / 2} y={y + height / 2 + 16} textAnchor="middle"
+              fill="rgba(255,255,255,0.8)" fontSize={8}>
               {shortName}
             </text>
           )}
-          <text x={x + width / 2} y={y + height / 2 + 10} textAnchor="middle"
-            fill="rgba(255,255,255,0.8)" fontSize={8}>
-            {formatPercent(change_p)}
-          </text>
         </>
       )}
     </g>
@@ -166,7 +160,7 @@ export function SectorStockTreemap({ selectedSector, etfSymbol }: SectorStockTre
               data={treemapData}
               dataKey="size"
               stroke="none"
-              content={<CustomContent x={0} y={0} width={0} height={0} name="" companyName="" change_p={0} close={0} />}
+              content={<CustomContent />}
             />
           </ResponsiveContainer>
         )}
