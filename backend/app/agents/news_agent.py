@@ -77,12 +77,16 @@ async def _analyze_news_with_ai(
         logger.error("News AI analysis failed: %s", e)
         summaries = []
 
-    # Merge summaries back with article metadata
+    # Merge summaries back with article metadata, deduplicate by URL
     summary_map = {s["index"]: s for s in summaries if isinstance(s, dict)}
+    seen_urls: set[str] = set()
     result: list[dict] = []
     for i, article in enumerate(articles):
         s = summary_map.get(i + 1, {})
         url = article.get("url", "")
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
         result.append({
             "article_url": url,
             "category": article.get("category", ""),

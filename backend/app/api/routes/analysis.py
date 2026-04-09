@@ -131,8 +131,9 @@ def _persist_results(result: MarketAnalysisState, svc: SupabaseService, batch_ty
         # Save global crises
         if news_data.global_crises:
             try:
+                allowed_keys = {"title", "source", "summary", "impact_score", "affected_sector", "sentiment"}
                 crises_rows = [
-                    {**c, "batch_type": batch_type, "analyzed_at": now_str}
+                    {**{k: v for k, v in c.items() if k in allowed_keys}, "batch_type": batch_type, "analyzed_at": now_str}
                     for c in news_data.global_crises
                 ]
                 cnt = svc.upsert_global_crises(crises_rows)
