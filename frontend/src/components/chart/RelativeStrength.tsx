@@ -104,13 +104,23 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
                   const x = Number(props.x ?? 0);
                   const y = Number(props.y ?? 0);
                   const w = Number(props.width ?? 0);
-                  const h = Number(props.height ?? 0);
+                  const h = Math.abs(Number(props.height ?? 0));
                   const cx = x + w / 2;
-                  // For positive bars: label above the bar top
-                  // For negative bars: label below the bar bottom
-                  const cy = n >= 0 ? y - 5 : y + Math.abs(h) + 12;
+                  // Pin labels to the zero (x-axis) line, inside each bar:
+                  // - Positive bar (top=y, bottom=y+h at zero line): label just above bar bottom
+                  // - Negative bar (top=y at zero line, bottom=y+h below): label just below bar top
+                  // Short bars (< 16px) have no room for an inside label → skip.
+                  if (h < 16) return null;
+                  const cy = n >= 0 ? y + h - 6 : y + 14;
                   return (
-                    <text x={cx} y={cy} textAnchor="middle" fontSize={10} fontWeight={600} fill="hsl(var(--muted-foreground))">
+                    <text
+                      x={cx}
+                      y={cy}
+                      textAnchor="middle"
+                      fontSize={10}
+                      fontWeight={700}
+                      fill="#ffffff"
+                    >
                       {`${n > 0 ? "+" : ""}${n.toFixed(1)}%`}
                     </text>
                   );
