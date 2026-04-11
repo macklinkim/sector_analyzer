@@ -24,22 +24,26 @@ export function AiTab({
       aria-labelledby="tab-ai"
       className="space-y-4 p-4"
     >
-      {/* Row 1: BCC + RRG (2열) — 맥락 설정 */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <BusinessCycleClock
-          regime={marketData.regime}
-          loading={marketData.loading}
-        />
-        <RelativeRotationGraph
-          sectors={marketData.sectors}
-          loading={marketData.loading}
-        />
+      {/* Row 1: BusinessCycleClock — 단독 풀폭 중앙정렬 (확대된 사이즈) */}
+      <div className="flex justify-center">
+        <div className="w-full max-w-2xl">
+          <BusinessCycleClock
+            regime={marketData.regime}
+            loading={marketData.loading}
+          />
+        </div>
       </div>
 
-      {/* Row 2: AI Rotation Signals (풀폭) — 판단 */}
+      {/* Row 2: RelativeRotationGraph — 풀폭 */}
+      <RelativeRotationGraph
+        sectors={marketData.sectors}
+        loading={marketData.loading}
+      />
+
+      {/* Row 3: AI Rotation Signals (풀폭) — 판단 */}
       <AiRotationSignals signals={analysisData.signals} />
 
-      {/* Row 3: AI Sector Screener (풀폭) — 실행 */}
+      {/* Row 4: AI Sector Screener (풀폭) — 실행 */}
       <AiScreenerTable
         scoreboards={analysisData.scoreboards}
         loading={analysisData.loading}
