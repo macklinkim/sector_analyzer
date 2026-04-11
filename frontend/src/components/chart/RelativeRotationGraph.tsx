@@ -126,7 +126,7 @@ export function RelativeRotationGraph({ sectors, loading }: RelativeRotationGrap
 
         <ResponsiveContainer width="100%" height={400}>
           <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.3} />
 
             {/* Background quadrant colors */}
             <ReferenceArea x1={0} x2={xMax} y1={0} y2={yMax} fill="#22c55e" fillOpacity={0.05} />
@@ -135,22 +135,22 @@ export function RelativeRotationGraph({ sectors, loading }: RelativeRotationGrap
             <ReferenceArea x1={xMin} x2={0} y1={yMin} y2={0} fill="#ef4444" fillOpacity={0.05} />
 
             {/* Center crosshair */}
-            <ReferenceLine x={0} stroke="hsl(var(--border))" strokeWidth={1.5} />
-            <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1.5} />
+            <ReferenceLine x={0} stroke="var(--color-border)" strokeWidth={1.5} />
+            <ReferenceLine y={0} stroke="var(--color-border)" strokeWidth={1.5} />
 
             <XAxis
               type="number"
               dataKey="rsRatio"
               domain={[xMin, xMax]}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              label={{ value: "RS-Ratio (%)", position: "bottom", fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+              label={{ value: "RS-Ratio (%)", position: "bottom", fontSize: 11, fill: "var(--color-muted-foreground)" }}
             />
             <YAxis
               type="number"
               dataKey="rsMomentum"
               domain={[yMin, yMax]}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              label={{ value: "RS-Momentum (%)", angle: -90, position: "insideLeft", fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+              label={{ value: "RS-Momentum (%)", angle: -90, position: "insideLeft", fontSize: 11, fill: "var(--color-muted-foreground)" }}
             />
             <Tooltip content={<CustomTooltip />} />
 
