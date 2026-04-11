@@ -36,11 +36,6 @@ function Dashboard() {
         />
       </header>
 
-      {/* Business Cycle Clock — below header */}
-      <div className="px-4 pt-4">
-        <BusinessCycleClock regime={marketData.regime} loading={marketData.loading} />
-      </div>
-
       {/* Area B + C: Side by side */}
       <main className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
         {/* Area B: Sector Heatmap & Movers */}
@@ -61,8 +56,9 @@ function Dashboard() {
           />
         </div>
 
-        {/* Area C: News Impact & Calendar & Rankings */}
+        {/* Area C: Business Cycle Clock + News Impact & Calendar & Rankings */}
         <div className="space-y-4">
+          <BusinessCycleClock regime={marketData.regime} loading={marketData.loading} />
           <NewsImpactFeed
             articles={newsData.articles}
             impacts={newsData.impacts}
