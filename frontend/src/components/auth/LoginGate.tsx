@@ -10,11 +10,16 @@ const SESSION_NAME_KEY = "economi_auth_name";
 const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 async function loginApi(name: string): Promise<{ token: string; name: string }> {
-  const resp = await fetch(`${BASE_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
-  });
+  let resp: Response;
+  try {
+    resp = await fetch(`${BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+  } catch {
+    throw new Error("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
+  }
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.detail ?? "로그인 실패");
@@ -23,8 +28,12 @@ async function loginApi(name: string): Promise<{ token: string; name: string }> 
 }
 
 async function verifyApi(token: string): Promise<boolean> {
-  const resp = await fetch(`${BASE_URL}/auth/verify?token=${token}`);
-  return resp.ok;
+  try {
+    const resp = await fetch(`${BASE_URL}/auth/verify?token=${token}`);
+    return resp.ok;
+  } catch {
+    return false;
+  }
 }
 
 export function useAuth() {
