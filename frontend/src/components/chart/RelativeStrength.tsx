@@ -104,7 +104,6 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
                   const x = Number(props.x ?? 0);
                   const y = Number(props.y ?? 0);
                   const w = Number(props.width ?? 0);
-                  const h = Math.abs(Number(props.height ?? 0));
                   const cx = x + w / 2;
                   // Positive bar: 바 외부 상단 바로 위 (y - 5)
                   // Negative bar: 바 내부 zero line 바로 아래 (y + 14) — 유지
