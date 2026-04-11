@@ -4,7 +4,8 @@
 
 Yahoo Finance + NewsAPI + Google News RSS --> LangGraph AI 3-Agent Pipeline --> Claude AI 분석 --> FastAPI + React SPA 대시보드
 
-**Live Demo:** https://sector-analyzer.onrender.com
+**Live Demo:** https://sectoranalyzerfrontend2026.kopserf.workers.dev (프론트엔드, Cloudflare Workers)
+**Backend API:** https://sector-analyzer.onrender.com (FastAPI, Render)
 
 ---
 
@@ -413,60 +414,95 @@ class MarketAnalysisState(TypedDict):
 
 ## Dashboard Layout
 
+2026-04-11 리팩토링으로 **Sticky 헤더 + 2탭 구조**로 전환되었습니다. `GlobalMacroHeader`와 `DashboardTabs`가 스크롤과 무관하게 상단에 고정되며, 탭 선택은 `localStorage`에 영속됩니다.
+
 ```
-+----------------------------------------------------------------+
-|  [A] Global Macro Header                                        |
-|  나스닥 21,879 +0.18% | 다우 46,504 -0.13% | S&P500 6,582 +0.11%|
-|  WTI $110.14 | US10Y 4.31 | DXY 99.94 | Gold $4,705              |
-|  현재 국면: Reflation (60%)                                       |
-+-------------------------------+--------------------------------+
-|  [B] Sector Analysis          |  [C] News & Indicators         |
-|  +---------+                  |  News Impact Feed              |
-|  | Sector  |                  |  [전체|경제|정치|사회|글로벌]     |
-|  | Heatmap |                  |  뉴스 카드 + AI 한글 요약         |
-|  | Treemap |                  |  [긍정 7/10 - 기술]              |
-|  +---------+                  |  ─────────────────             |
-|  섹터 구성종목 Treemap          |  Economic Calendar              |
-|  + Sparkline (30일 추세)       |  Gold $4,705 (prev: 4,651)     |
-|  + Market Movers              |  WTI $110.14 (prev: 111.54)    |
-+-------------------------------+--------------------------------+
-|  [D] Charts & AI Screener                                       |
-|  AI Rotation Signals  |  상대 강도 vs S&P500                     |
-|  [MAJOR] XLU +0.72    |  [BarChart: RS by sector]               |
-|  [ALERT] XLE +0.58    |                                         |
-|  ─────────────────────────────────────────                      |
-|  섹터 모멘텀 (1W / 1M / 3M / 1Y)                                |
-|  [Grouped BarChart: momentum by sector and period]              |
-|  ─────────────────────────────────────────                      |
-|  52주 범위 차트 (Bullet Chart)                                    |
-|  ─────────────────────────────────────────                      |
-|  AI Sector Screener Table                                       |
-|  Rank | Sector | ETF | AI Score | Base | News | Mom | Signal   |
-+----------------------------------------------------------------+
++==================================================================+
+|  [STICKY] Global Macro Header  (z-40, 스크롤해도 고정)            |
+|  나스닥 21,879 +0.18% | 다우 46,504 -0.13% | S&P500 6,582 +0.11% |
+|  WTI $110.14 | US10Y 4.31 | DXY 99.94 | Gold $4,705               |
+|  현재 국면: Reflation (60%)                                        |
+|------------------------------------------------------------------|
+|  [ 시장 현황 ]  [ AI 인사이트 ]   <- DashboardTabs (sticky)        |
++==================================================================+
+
+        ▼ 시장 현황 탭 (MarketTab — Yahoo Finance raw data)
++------------------------------------------------------------------+
+|  Row 1: SectorHeatmap (풀폭, Treemap 섹터 진입점)                  |
++------------------------------------------------------------------+
+|  Row 2: SectorStockTreemap (풀폭, 선택 섹터 구성종목)              |
++---------------------------------+--------------------------------+
+|  Row 3: SectorSparkline         |  NewsImpactFeed                |
+|         30일 AreaChart          |  전체/경제/정치/사회/글로벌 탭 |
++---------------------------------+--------------------------------+
+|  Row 4: MarketMovers            |  EconomicCalendar              |
+|         Gainers/Losers/Volume   |  US10Y, DXY, WTI, Gold         |
++------------------------------------------------------------------+
+|  Row 5: RelativeStrength (풀폭, BarChart RS vs SPY)                |
++------------------------------------------------------------------+
+|  Row 6: MomentumBar (풀폭, 1W/1M/3M/1Y Grouped BarChart)           |
++------------------------------------------------------------------+
+|  Row 7: RangeChart (풀폭, 52주 Bullet Chart)                       |
++------------------------------------------------------------------+
+
+        ▼ AI 인사이트 탭 (AiTab — AI 파이프라인 판단)
++---------------------------------+--------------------------------+
+|  Row 1a: BusinessCycleClock     |  Row 1b: RelativeRotationGraph |
+|          4국면 원형 시계         |          RS-Ratio x Momentum  |
+|          (360x360 확대)          |          Scatter + 4사분면    |
++---------------------------------+--------------------------------+
+|  Row 2: AiRotationSignals (풀폭)                                  |
+|   [MAJOR 🔴] XLU +0.72  confidence 72%  · reasoning 좌측 정렬      |
+|   [ALERT 🟡] XLE +0.58  confidence 58%  · reasoning 좌측 정렬      |
+|   ... (각 카드 reasoning 항상 표시, 날짜 바로 왼쪽)                |
++------------------------------------------------------------------+
+|  Row 3: AiScreenerTable (풀폭)                                    |
+|  Rank | Sector | ETF | AI Score | Base | News | Mom | Signal     |
++------------------------------------------------------------------+
 ```
+
+### 탭 설계 원칙
+
+| 탭 | 역할 | 컴포넌트 |
+|---|---|---|
+| **시장 현황** | Yahoo Finance raw data 레이어 (외부 API 원본) | SectorHeatmap, SectorStockTreemap, SectorSparkline, MarketMovers, NewsImpactFeed, EconomicCalendar, SectorComparisonCharts(RelativeStrength/MomentumBar/RangeChart) |
+| **AI 인사이트** | AI 파이프라인 판단 레이어 (추론/시그널) | BusinessCycleClock, RelativeRotationGraph, AiRotationSignals, AiScreenerTable |
+
+- **`selectedSector`는 두 탭이 공유** — Tab 2에서 섹터 클릭 후 Tab 1로 돌아가도 동일 섹터가 유지
+- **데이터 훅(`useMarketData`/`useNewsData`/`useAnalysisData`)은 `Dashboard` 최상위에서 1회 호출** — 탭 전환 시 재요청 없음 (단일 진실 원천)
+- **비활성 탭은 언마운트** — 차트 DOM/리스너 비용 절감 (Recharts 재마운트 시 스케일 재계산 비용은 허용)
+- **`useStickyState` lazy initializer로 first-paint flash 방지** — localStorage에 저장된 탭이 첫 렌더에 즉시 적용
 
 ---
 
 ## Frontend Components
 
-### Area A: Header
+### Sticky Header
 
 | 컴포넌트 | 파일 | 기능 |
 |---------|------|------|
-| `GlobalMacroHeader` | `header/GlobalMacroHeader.tsx` | Area A 전체 래퍼 |
+| `GlobalMacroHeader` | `header/GlobalMacroHeader.tsx` | 지수 + 거시 지표 + 국면 배지 전체 래퍼 |
 | `TickerBar` | `header/TickerBar.tsx` | 지수 + 거시 지표 티커 (이름 매핑, 화살표) |
 | `RegimeBadge` | `header/RegimeBadge.tsx` | 현재 국면 배지 (Goldilocks/Reflation/...) |
 
-### Area B: Sector Analysis
+### Layout (2탭 구조, 2026-04-11 도입)
+
+| 컴포넌트 | 파일 | 기능 |
+|---------|------|------|
+| `DashboardTabs` | `layout/DashboardTabs.tsx` | WAI-ARIA tablist, 2개 탭 ("시장 현황" / "AI 인사이트"), Tab+Space/Enter 키보드 전환 |
+| `MarketTab` | `layout/MarketTab.tsx` | Tab 1 "시장 현황" 7-Row 패널 (Heatmap → StockTreemap 풀폭 → Sparkline+News → Movers+Calendar → RS → Momentum → Range) |
+| `AiTab` | `layout/AiTab.tsx` | Tab 2 "AI 인사이트" 3-Row 패널 (BCC+RRG 2열 → AiRotationSignals → AiScreenerTable) |
+
+### Sector (Market Tab)
 
 | 컴포넌트 | 파일 | 기능 |
 |---------|------|------|
 | `SectorHeatmap` | `sector/SectorHeatmap.tsx` | Recharts Treemap, volume 기반 크기, 7단계 색상 |
-| `SectorStockTreemap` | `sector/SectorStockTreemap.tsx` | 구성종목 Sub-Treemap (Top 15 + ETC), localStorage 4시간 캐시 |
+| `SectorStockTreemap` | `sector/SectorStockTreemap.tsx` | 구성종목 Sub-Treemap (Top 15 + ETC), 풀폭 배치, localStorage 4시간 캐시 |
 | `SectorSparkline` | `sector/SectorSparkline.tsx` | 30일 AreaChart + 그라데이션, 번들 API 1회 호출 |
 | `MarketMovers` | `sector/MarketMovers.tsx` | Top Gainers/Losers/Volume, localStorage 4시간 캐시 |
 
-### Area C: News & Calendar
+### News (Market Tab)
 
 | 컴포넌트 | 파일 | 기능 |
 |---------|------|------|
@@ -474,23 +510,41 @@ class MarketAnalysisState(TypedDict):
 | `ImpactCard` | `news/ImpactCard.tsx` | 뉴스 카드: 제목, AI 한글 요약, 임팩트 점수, 섹터 |
 | `EconomicCalendar` | `news/EconomicCalendar.tsx` | 거시 지표 4개: US10Y, DXY, WTI, Gold |
 
-### Area D: Charts & Screener
+### Chart
+
+| 컴포넌트 | 파일 | 사용 탭 | 기능 |
+|---------|------|---------|------|
+| `SectorComparisonCharts` | `chart/SectorComparisonCharts.tsx` | 시장 현황 | 3차트 세로 풀폭 스택 (RS → Momentum → Range). 구 `MultiChartGrid`를 리네임 + 단순화 |
+| `RelativeStrength` | `chart/RelativeStrength.tsx` | 시장 현황 | BarChart (RS vs SPY), 양수 바 외부 상단 라벨 + 음수 바 내부 zero-line 라벨 (흰색) |
+| `MomentumBar` | `chart/MomentumBar.tsx` | 시장 현황 | Grouped BarChart (1W/1M/3M/1Y), 커스텀 Legend |
+| `RangeChart` | `chart/RangeChart.tsx` | 시장 현황 | 52주 Bullet Chart (11 섹터, 5열 그리드) |
+| `BusinessCycleClock` | `chart/BusinessCycleClock.tsx` | AI 인사이트 | 360×360 확대된 4국면 원형 시계, Framer Motion 포인터. 기존 `header/` → `chart/` 이동 |
+| `RelativeRotationGraph` | `chart/RelativeRotationGraph.tsx` | AI 인사이트 | Recharts ScatterChart, RS-Ratio × RS-Momentum, 4사분면 (Leading/Improving/Weakening/Lagging), 축 tick 소수점 2자리 |
+| `AiRotationSignals` | `chart/AiRotationSignals.tsx` | AI 인사이트 | `EventMarker` 경량 래퍼, 향후 AI 시그널 전용 기능(필터/정렬) 확장 포인트 |
+| `EventMarker` | `chart/EventMarker.tsx` | AI 인사이트 | MAJOR/ALERT/WATCH 등급, 확신도 바, reasoning 항상 표시 (날짜 좌측, `flex-1`) |
+
+### Screener (AI Tab)
 
 | 컴포넌트 | 파일 | 기능 |
 |---------|------|------|
-| `MultiChartGrid` | `chart/MultiChartGrid.tsx` | 레이아웃: Signals+RS(2col) -> Momentum(full) -> Range |
-| `EventMarker` | `chart/EventMarker.tsx` | AI Rotation Signals: MAJOR/ALERT/WATCH 등급, 확신도 바 |
-| `MomentumBar` | `chart/MomentumBar.tsx` | Grouped BarChart (1W/1M/3M/1Y), 커스텀 Legend |
-| `RelativeStrength` | `chart/RelativeStrength.tsx` | BarChart (RS vs SPY), 조건부 색상 (녹/적) |
-| `RangeChart` | `chart/RangeChart.tsx` | 52주 Bullet Chart (11 섹터, 5열 그리드) |
-| `AiScreenerTable` | `screener/AiScreenerTable.tsx` | AI Score 기반 랭킹 테이블, Overweight/Neutral/Underweight |
+| `AiScreenerTable` | `screener/AiScreenerTable.tsx` | AI Score 기반 랭킹 테이블, Overweight/Neutral/Underweight, 섹터 행 클릭 시 `selectedSector` 동기화 |
+
+### Hooks
+
+| 훅 | 파일 | 기능 |
+|---|------|------|
+| `useMarketData` | `hooks/useMarketData.ts` | 지수/섹터/거시지표/국면 데이터 fetch + localStorage TTL 캐시 |
+| `useNewsData` | `hooks/useNewsData.ts` | 뉴스 요약/임팩트/글로벌 위기 fetch + localStorage TTL 캐시 |
+| `useAnalysisData` | `hooks/useAnalysisData.ts` | 스코어보드/시그널/리포트 fetch + localStorage TTL 캐시 |
+| `useStickyState` | `hooks/useStickyState.ts` | 제네릭 localStorage 영속 상태 훅. **lazy initializer 패턴**으로 첫 페인트 flash 방지 (2026-04-11 도입) |
+| `useAuth` | `components/auth/LoginGate.tsx` 내부 | 세션 토큰 관리 |
 
 ### Common UI
 
 | 컴포넌트 | 기반 | 기능 |
 |---------|------|------|
-| `LoginGate` | Custom | 허가제 로그인 게이트 |
-| `LoadingScreen` | Custom | 로딩 모달 (반투명 배경 + 텍스트) |
+| `LoginGate` | Custom | 허가제 로그인 게이트 (ALLOWED_USERS 검증), 네트워크 에러 graceful handling |
+| `LoadingScreen` | Custom | 로딩 모달 (반투명 배경 + 텍스트, `z-50`으로 sticky 헤더 `z-40` 위 오버레이) |
 | `Card` | shadcn/ui | Card/CardHeader/CardContent/CardTitle |
 | `Badge` | shadcn/ui + CVA | bullish/bearish/regime variants |
 | `Skeleton` | shadcn/ui | 로딩 스켈레톤 |
@@ -1183,6 +1237,78 @@ npm run preview                     # 빌드 결과 미리보기
 curl -X POST http://localhost:8000/api/analysis/trigger \
   -H "X-API-Key: your-trigger-key"
 ```
+
+---
+
+## Changelog (2026-04-11)
+
+### 대시보드 2탭 레이아웃 분리 — "시장 현황" / "AI 인사이트"
+
+Yahoo Finance raw data와 AI 파이프라인 판단 결과를 **정보 레이어 단위로 분리**하는 대규모 UI 리팩토링.
+
+**구조 변화:**
+- 기존 Area A/B/C/D 단일 페이지 → **Sticky 헤더 + 2탭 구조**
+- `GlobalMacroHeader` + `DashboardTabs`가 `sticky top-0 z-40`으로 고정
+- 탭 선택은 `useStickyState` 커스텀 훅으로 **localStorage 영속** (lazy initializer로 first-paint flash 방지)
+- `selectedSector`는 `Dashboard` 레벨 공유 state — 탭 전환 시 섹터 선택 유지
+- 데이터 훅은 최상위에서 1회 호출, 두 탭이 같은 데이터 공유 (단일 진실 원천)
+
+**Tab 1 "시장 현황" (7-Row MarketTab):**
+1. `SectorHeatmap` (풀폭)
+2. `SectorStockTreemap` (풀폭으로 확장 — 기존 좁은 컬럼에서 라벨 가독성 문제 해결)
+3. `SectorSparkline` + `NewsImpactFeed` (2열)
+4. `MarketMovers` + `EconomicCalendar` (2열)
+5. `RelativeStrength` (풀폭)
+6. `MomentumBar` (풀폭)
+7. `RangeChart` (풀폭)
+
+**Tab 2 "AI 인사이트" (3-Row AiTab):**
+1. `BusinessCycleClock` + `RelativeRotationGraph` (2열, 맥락 설정)
+2. `AiRotationSignals` (풀폭, 판단)
+3. `AiScreenerTable` (풀폭, 실행 후보)
+
+### 신규 파일 (5)
+
+- `frontend/src/hooks/useStickyState.ts` — localStorage 영속 제네릭 훅 (lazy initializer)
+- `frontend/src/components/layout/DashboardTabs.tsx` — WAI-ARIA tablist 탭 바
+- `frontend/src/components/layout/MarketTab.tsx` — 7-Row 시장 현황 패널
+- `frontend/src/components/layout/AiTab.tsx` — 3-Row AI 인사이트 패널
+- `frontend/src/components/chart/AiRotationSignals.tsx` — `EventMarker` 경량 래퍼 (AI 시그널 전용 기능 확장 포인트)
+
+### 파일 이동/리네임 (2, `git mv`)
+
+- `components/header/BusinessCycleClock.tsx` → `components/chart/BusinessCycleClock.tsx` (Tab 2에서 사용되므로 의미 정합성)
+- `components/chart/MultiChartGrid.tsx` → `components/chart/SectorComparisonCharts.tsx` (내부에서 `EventMarker` 제거, 3차트 세로 스택으로 단순화)
+
+### 주요 수정
+
+- **타입 인터페이스 도입:** `MarketDataState`/`NewsDataState`/`AnalysisDataState` + `DashboardTab` 유니언. 레이아웃 컴포넌트가 훅 모듈을 직접 import하지 않도록 분리 (layout → types 단방향)
+- **`BusinessCycleClock` 확대:** 시계 컨테이너 240×240 → 360×360, quadrants 116 → 174, pointer 80 → 120 (비율 유지), 내부 텍스트/아이콘 사이즈 비례 확대
+- **`EventMarker` 전면 재구성:** click-expand 토글 제거 (useState + isExpanded 삭제), button → div. `reasoning`이 1행 flex 컨테이너 우측(날짜 바로 왼쪽)에 **항상 표시**, `flex-1`로 남은 공간 최대 활용, `text-sm`/`text-white`/bullet 프리픽스로 가독성 개선
+- **`MarketTab` 레이아웃 조정:** Row 3/4에서 `NewsImpactFeed`와 `MarketMovers` 위치 swap
+- **`RelativeStrength` 라벨 수정:** 깨진 `hsl(var(--muted-foreground))` CSS 변수 fallback 제거, 흰색(`#ffffff`)으로 고정. 양수 바는 외부 상단(`y - 5`), 음수 바는 내부 zero-line 아래(`y + 14`)에 배치
+- **`RelativeRotationGraph` 축 색상 수정:** 동일한 CSS 변수 fallback 버그로 tick이 검은색으로 렌더되던 문제 해결 (`var(--color-muted-foreground)` 직접 참조). 축 tick에 `tickFormatter` 추가해 소수점 2자리 고정
+
+### 빌드/배포 인프라
+
+- `frontend/vite.config.ts`에 Cloudflare Vite plugin 통합
+- `frontend/.gitignore`에 `.wrangler`, `.dev.vars*`, `.env*` 규칙 추가
+- `frontend/.env.production` (git ignored) 도입 — `VITE_API_URL=https://sector-analyzer.onrender.com/api` 빌드 타임 주입
+- `LoginGate` 네트워크 에러 graceful handling: 서버 연결 실패 시 사용자 친화적 에러 메시지
+- Scheduler에 `market_open` 배치 job 추가 (10:00 ET)
+
+### 배포 워크플로
+
+- Cloudflare Workers static assets (`not_found_handling: single-page-application`)
+- `npm run deploy` = `npm run build && wrangler deploy`
+- Worker URL: https://sectoranalyzerfrontend2026.kopserf.workers.dev
+
+### 방법론
+
+본 리팩토링은 **Superpowers skill 워크플로**(brainstorming → writing-plans → subagent-driven-development)로 진행:
+1. `docs/superpowers/specs/2026-04-11-dashboard-tab-layout-design.md` — 스펙 작성 + spec-document-reviewer 2회 리뷰 루프
+2. `docs/superpowers/plans/2026-04-11-dashboard-tab-layout.md` — 10-Task 구현 플랜 + plan-document-reviewer 리뷰
+3. Task별 fresh 서브에이전트 dispatch + spec compliance/code quality 2단계 리뷰 후 커밋
 
 ---
 
