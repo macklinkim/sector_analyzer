@@ -12,7 +12,7 @@ import { NewsImpactFeed } from "@/components/news/NewsImpactFeed";
 import { EconomicCalendar } from "@/components/news/EconomicCalendar";
 import { MultiChartGrid } from "@/components/chart/MultiChartGrid";
 import { AiScreenerTable } from "@/components/screener/AiScreenerTable";
-import { BusinessCycleClock } from "@/components/header/BusinessCycleClock";
+import { BusinessCycleClock } from "@/components/chart/BusinessCycleClock";
 import { RelativeRotationGraph } from "@/components/chart/RelativeRotationGraph";
 
 function Dashboard() {
