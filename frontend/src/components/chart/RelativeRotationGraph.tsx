@@ -142,6 +142,7 @@ export function RelativeRotationGraph({ sectors, loading }: RelativeRotationGrap
               type="number"
               dataKey="rsRatio"
               domain={[xMin, xMax]}
+              tickFormatter={(v: number) => v.toFixed(2)}
               tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
               label={{ value: "RS-Ratio (%)", position: "bottom", fontSize: 11, fill: "var(--color-muted-foreground)" }}
             />
@@ -149,6 +150,7 @@ export function RelativeRotationGraph({ sectors, loading }: RelativeRotationGrap
               type="number"
               dataKey="rsMomentum"
               domain={[yMin, yMax]}
+              tickFormatter={(v: number) => v.toFixed(2)}
               tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
               label={{ value: "RS-Momentum (%)", angle: -90, position: "insideLeft", fontSize: 11, fill: "var(--color-muted-foreground)" }}
             />

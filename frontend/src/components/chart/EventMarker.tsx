@@ -68,7 +68,7 @@ export function EventMarker({ signals }: EventMarkerProps) {
             >
               <div className="flex items-center gap-3">
                 <span className="text-lg">{grade.icon}</span>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold", grade.bg, grade.text)}>
                       {grade.label}
@@ -96,7 +96,7 @@ export function EventMarker({ signals }: EventMarkerProps) {
                   </div>
                 </div>
                 {/* Reasoning — 날짜 바로 좌측, 항상 표시 */}
-                <p className="w-1/3 shrink-0 self-center text-xs leading-relaxed text-muted-foreground">
+                <p className="flex-1 self-center text-xs leading-relaxed text-muted-foreground">
                   {signal.reasoning}
                 </p>
                 <span className="shrink-0 text-xs text-muted-foreground">
