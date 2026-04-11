@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -10,9 +9,9 @@ interface EventMarkerProps {
 }
 
 const GRADE_CONFIG = {
-  MAJOR: { label: "MAJOR", icon: "🔴", border: "border-red-500/40", hoverBorder: "hover:border-red-500/70", bg: "bg-red-500/10", text: "text-red-400" },
-  ALERT: { label: "ALERT", icon: "🟡", border: "border-amber-500/40", hoverBorder: "hover:border-amber-500/70", bg: "bg-amber-500/10", text: "text-amber-400" },
-  WATCH: { label: "WATCH", icon: "🔵", border: "border-blue-500/30", hoverBorder: "hover:border-blue-500/60", bg: "bg-blue-500/10", text: "text-blue-400" },
+  MAJOR: { label: "MAJOR", icon: "🔴", border: "border-red-500/40", bg: "bg-red-500/10", text: "text-red-400" },
+  ALERT: { label: "ALERT", icon: "🟡", border: "border-amber-500/40", bg: "bg-amber-500/10", text: "text-amber-400" },
+  WATCH: { label: "WATCH", icon: "🔵", border: "border-blue-500/30", bg: "bg-blue-500/10", text: "text-blue-400" },
 } as const;
 
 function ConfidenceBar({ score }: { score: number }) {
@@ -32,8 +31,6 @@ function ConfidenceBar({ score }: { score: number }) {
 }
 
 export function EventMarker({ signals }: EventMarkerProps) {
-  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
-
   if (signals.length === 0) return null;
 
   const topSignals = signals.slice(0, 6);
@@ -54,7 +51,6 @@ export function EventMarker({ signals }: EventMarkerProps) {
       </CardHeader>
       <CardContent className="space-y-2">
         {topSignals.map((signal, i) => {
-          const isExpanded = expandedIdx === i;
           const grade = GRADE_CONFIG[signal.signal_grade as keyof typeof GRADE_CONFIG] ?? GRADE_CONFIG.WATCH;
           const sector = signal.to_sector ?? signal.from_sector ?? "Market";
           const typeLabel =
@@ -62,54 +58,56 @@ export function EventMarker({ signals }: EventMarkerProps) {
             signal.signal_type === "rotate_out" ? "ROTATE OUT" : "REGIME SHIFT";
 
           return (
-            <button
+            <div
               key={`${signal.signal_type}-${sector}-${i}`}
-              onClick={() => setExpandedIdx(isExpanded ? null : i)}
               className={cn(
-                "w-full rounded-lg border p-3 text-left transition-all",
-                grade.border, grade.hoverBorder,
-                isExpanded && grade.bg,
+                "w-full rounded-lg border p-3 text-left",
+                grade.border,
+                grade.bg,
               )}
             >
-              <div className="flex items-center gap-3">
-                <span className="text-lg">{grade.icon}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold", grade.bg, grade.text)}>
-                      {grade.label}
-                    </span>
-                    <Badge
-                      variant={signal.signal_type.includes("in") ? "bullish" : "bearish"}
-                      className="text-[10px] px-1.5 py-0"
-                    >
-                      {typeLabel}
-                    </Badge>
-                    <span className="text-sm font-semibold text-foreground truncate">
-                      {sector}
-                      <span className="ml-1 text-xs font-normal text-muted-foreground">
-                        {getSectorLabel(sector)}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-center gap-3">
-                    <ConfidenceBar score={signal.confidence_score ?? 0.5} />
-                    {signal.macro_environment && (
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                        {signal.macro_environment}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {new Date(signal.detected_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
-                </span>
-              </div>
-              {isExpanded && (
-                <p className="mt-2 border-t border-border/50 pt-2 text-xs leading-relaxed text-muted-foreground">
+              <div className="flex items-start gap-4">
+                {/* Left: AI reasoning (always visible) */}
+                <p className="w-1/3 shrink-0 text-xs leading-relaxed text-muted-foreground">
                   {signal.reasoning}
                 </p>
-              )}
-            </button>
+
+                {/* Right: existing first-row content (icon + sector info + date) */}
+                <div className="flex flex-1 items-center gap-3 min-w-0">
+                  <span className="text-lg">{grade.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold", grade.bg, grade.text)}>
+                        {grade.label}
+                      </span>
+                      <Badge
+                        variant={signal.signal_type.includes("in") ? "bullish" : "bearish"}
+                        className="text-[10px] px-1.5 py-0"
+                      >
+                        {typeLabel}
+                      </Badge>
+                      <span className="text-sm font-semibold text-foreground truncate">
+                        {sector}
+                        <span className="ml-1 text-xs font-normal text-muted-foreground">
+                          {getSectorLabel(sector)}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-3">
+                      <ConfidenceBar score={signal.confidence_score ?? 0.5} />
+                      {signal.macro_environment && (
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                          {signal.macro_environment}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {new Date(signal.detected_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                  </span>
+                </div>
+              </div>
+            </div>
           );
         })}
       </CardContent>
