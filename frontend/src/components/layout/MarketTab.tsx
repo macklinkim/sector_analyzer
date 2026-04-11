@@ -44,19 +44,23 @@ export function MarketTab({
         etfSymbol={selectedEtf}
       />
 
-      {/* Row 3: Sparkline + NewsImpactFeed (2열) */}
+      {/* Row 3: Sparkline + NewsImpactFeed (2열) — Sparkline이 높이 기준 */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <SectorSparkline
           sectors={marketData.sectors}
           selectedSector={selectedSector}
           onSectorClick={setSelectedSector}
         />
-        <NewsImpactFeed
-          articles={newsData.articles}
-          impacts={newsData.impacts}
-          crises={newsData.crises}
-          loading={newsData.loading}
-        />
+        <div className="relative">
+          <div className="absolute inset-0">
+            <NewsImpactFeed
+              articles={newsData.articles}
+              impacts={newsData.impacts}
+              crises={newsData.crises}
+              loading={newsData.loading}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Row 4: MarketMovers + Calendar (2열) */}

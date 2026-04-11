@@ -76,7 +76,7 @@ export function NewsImpactFeed({ articles, impacts, crises, loading }: NewsImpac
   const impactMap = new Map(impacts.map((imp) => [imp.news_url, imp]));
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex h-full flex-col">
       <CardHeader className="pb-2">
         <CardTitle>News Impact Feed</CardTitle>
         <div className="flex flex-wrap gap-1 pt-1">
