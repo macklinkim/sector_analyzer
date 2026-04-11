@@ -5,6 +5,7 @@
 Yahoo Finance + NewsAPI + Google News RSS --> LangGraph AI 3-Agent Pipeline --> Claude AI 분석 --> FastAPI + React SPA 대시보드
 
 **Live Demo:** https://sectoranalyzerfrontend2026.kopserf.workers.dev (프론트엔드, Cloudflare Workers)
+
 **Backend API:** https://sector-analyzer.onrender.com (FastAPI, Render)
 
 ---
