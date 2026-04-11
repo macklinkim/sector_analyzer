@@ -9,6 +9,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
   LabelList,
+  Label,
 } from "recharts";
 import type { Sector } from "@/types";
 
@@ -108,31 +109,55 @@ export function RelativeRotationGraph({ sectors, loading }: RelativeRotationGrap
         Relative Rotation Graph (RRG)
       </h3>
       <div className="relative">
-        {/* Quadrant labels — absolute positioned corners */}
-        <div className="pointer-events-none absolute inset-0 z-10">
-          <span className="absolute right-14 top-10 text-[11px] font-medium text-green-500/40">
-            Leading
-          </span>
-          <span className="absolute left-14 top-10 text-[11px] font-medium text-blue-500/40">
-            Improving
-          </span>
-          <span className="absolute right-14 bottom-10 text-[11px] font-medium text-yellow-500/40">
-            Weakening
-          </span>
-          <span className="absolute left-14 bottom-10 text-[11px] font-medium text-red-500/40">
-            Lagging
-          </span>
-        </div>
-
         <ResponsiveContainer width="100%" height={400}>
           <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.3} />
 
-            {/* Background quadrant colors */}
-            <ReferenceArea x1={0} x2={xMax} y1={0} y2={yMax} fill="#22c55e" fillOpacity={0.05} />
-            <ReferenceArea x1={xMin} x2={0} y1={0} y2={yMax} fill="#3b82f6" fillOpacity={0.05} />
-            <ReferenceArea x1={0} x2={xMax} y1={yMin} y2={0} fill="#eab308" fillOpacity={0.05} />
-            <ReferenceArea x1={xMin} x2={0} y1={yMin} y2={0} fill="#ef4444" fillOpacity={0.05} />
+            {/* Background quadrant colors with inside labels */}
+            <ReferenceArea x1={0} x2={xMax} y1={0} y2={yMax} fill="#22c55e" fillOpacity={0.05}>
+              <Label
+                value="Leading"
+                position="insideTopRight"
+                offset={12}
+                fill="#22c55e"
+                fontSize={12}
+                fontWeight={700}
+                fillOpacity={0.85}
+              />
+            </ReferenceArea>
+            <ReferenceArea x1={xMin} x2={0} y1={0} y2={yMax} fill="#3b82f6" fillOpacity={0.05}>
+              <Label
+                value="Improving"
+                position="insideTopLeft"
+                offset={12}
+                fill="#3b82f6"
+                fontSize={12}
+                fontWeight={700}
+                fillOpacity={0.85}
+              />
+            </ReferenceArea>
+            <ReferenceArea x1={0} x2={xMax} y1={yMin} y2={0} fill="#eab308" fillOpacity={0.05}>
+              <Label
+                value="Weakening"
+                position="insideBottomRight"
+                offset={12}
+                fill="#eab308"
+                fontSize={12}
+                fontWeight={700}
+                fillOpacity={0.85}
+              />
+            </ReferenceArea>
+            <ReferenceArea x1={xMin} x2={0} y1={yMin} y2={0} fill="#ef4444" fillOpacity={0.05}>
+              <Label
+                value="Lagging"
+                position="insideBottomLeft"
+                offset={12}
+                fill="#ef4444"
+                fontSize={12}
+                fontWeight={700}
+                fillOpacity={0.85}
+              />
+            </ReferenceArea>
 
             {/* Center crosshair */}
             <ReferenceLine x={0} stroke="var(--color-border)" strokeWidth={1.5} />

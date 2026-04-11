@@ -96,9 +96,20 @@ export function EventMarker({ signals }: EventMarkerProps) {
                   </div>
                 </div>
                 {/* Reasoning — 날짜 바로 좌측, 항상 표시 */}
-                <p className="flex-1 self-center text-sm leading-relaxed text-white">
-                  • {signal.reasoning}
-                </p>
+                <div
+                  className={cn(
+                    "flex-1 self-center rounded-md border-l-2 bg-white/[0.03] px-3 py-2",
+                    grade.border,
+                  )}
+                >
+                  <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <span>✦</span>
+                    <span>AI Analysis</span>
+                  </div>
+                  <p className="text-sm leading-relaxed text-white break-words">
+                    {signal.reasoning}
+                  </p>
+                </div>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {new Date(signal.detected_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
                 </span>
