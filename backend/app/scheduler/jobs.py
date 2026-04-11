@@ -38,6 +38,15 @@ def create_scheduler() -> BackgroundScheduler:
 
     scheduler.add_job(
         run_batch,
+        trigger=CronTrigger(hour=10, minute=0, timezone="US/Eastern"),
+        args=["market_open"],
+        id="market_open_batch",
+        name="market_open_batch",
+        replace_existing=True,
+    )
+
+    scheduler.add_job(
+        run_batch,
         trigger=CronTrigger(hour=17, minute=0, timezone="US/Eastern"),
         args=["post_market"],
         id="post_market_batch",

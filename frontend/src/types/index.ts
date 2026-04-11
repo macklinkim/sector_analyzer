@@ -177,3 +177,41 @@ export const REGIME_LABELS: Record<RegimeType, string> = {
   stagflation: "Stagflation",
   deflation: "Deflation",
 };
+
+// === Dashboard layout types (2026-04-11) ===
+
+export type DashboardTab = 'market' | 'ai';
+
+/**
+ * Shape returned by useMarketData(). Layout components import this
+ * instead of ReturnType<typeof useMarketData> to avoid coupling
+ * layout → hooks direction.
+ */
+export interface MarketDataState {
+  indices: MarketIndex[];
+  sectors: Sector[];
+  indicators: EconomicIndicator[];
+  regime: MacroRegime | null;
+  loading: boolean;
+  error: string | null;
+  lastUpdated: string | null;
+  refresh: () => void;
+}
+
+export interface NewsDataState {
+  articles: NewsArticleEnriched[];
+  impacts: NewsImpactAnalysis[];
+  crises: GlobalCrisis[];
+  loading: boolean;
+  error: string | null;
+  refresh: () => void;
+}
+
+export interface AnalysisDataState {
+  scoreboards: SectorScoreboard[];
+  signals: RotationSignal[];
+  report: MarketReport | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => void;
+}
