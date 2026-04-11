@@ -66,46 +66,42 @@ export function EventMarker({ signals }: EventMarkerProps) {
                 grade.bg,
               )}
             >
-              <div className="flex items-start gap-4">
-                {/* Left: AI reasoning (always visible) */}
-                <p className="w-1/3 shrink-0 text-xs leading-relaxed text-muted-foreground">
+              <div className="flex items-center gap-3">
+                <span className="text-lg">{grade.icon}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold", grade.bg, grade.text)}>
+                      {grade.label}
+                    </span>
+                    <Badge
+                      variant={signal.signal_type.includes("in") ? "bullish" : "bearish"}
+                      className="text-[10px] px-1.5 py-0"
+                    >
+                      {typeLabel}
+                    </Badge>
+                    <span className="text-sm font-semibold text-foreground truncate">
+                      {sector}
+                      <span className="ml-1 text-xs font-normal text-muted-foreground">
+                        {getSectorLabel(sector)}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-3">
+                    <ConfidenceBar score={signal.confidence_score ?? 0.5} />
+                    {signal.macro_environment && (
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        {signal.macro_environment}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {/* Reasoning — 날짜 바로 좌측, 항상 표시 */}
+                <p className="w-1/3 shrink-0 self-center text-xs leading-relaxed text-muted-foreground">
                   {signal.reasoning}
                 </p>
-
-                {/* Right: existing first-row content (icon + sector info + date) */}
-                <div className="flex flex-1 items-center gap-3 min-w-0">
-                  <span className="text-lg">{grade.icon}</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold", grade.bg, grade.text)}>
-                        {grade.label}
-                      </span>
-                      <Badge
-                        variant={signal.signal_type.includes("in") ? "bullish" : "bearish"}
-                        className="text-[10px] px-1.5 py-0"
-                      >
-                        {typeLabel}
-                      </Badge>
-                      <span className="text-sm font-semibold text-foreground truncate">
-                        {sector}
-                        <span className="ml-1 text-xs font-normal text-muted-foreground">
-                          {getSectorLabel(sector)}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-3">
-                      <ConfidenceBar score={signal.confidence_score ?? 0.5} />
-                      {signal.macro_environment && (
-                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                          {signal.macro_environment}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {new Date(signal.detected_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
-                  </span>
-                </div>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {new Date(signal.detected_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                </span>
               </div>
             </div>
           );
