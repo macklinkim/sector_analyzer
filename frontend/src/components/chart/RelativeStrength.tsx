@@ -106,12 +106,9 @@ export function RelativeStrength({ sectors, loading }: RelativeStrengthProps) {
                   const w = Number(props.width ?? 0);
                   const h = Math.abs(Number(props.height ?? 0));
                   const cx = x + w / 2;
-                  // Pin labels to the zero (x-axis) line, inside each bar:
-                  // - Positive bar (top=y, bottom=y+h at zero line): label just above bar bottom
-                  // - Negative bar (top=y at zero line, bottom=y+h below): label just below bar top
-                  // Short bars (< 16px) have no room for an inside label → skip.
-                  if (h < 16) return null;
-                  const cy = n >= 0 ? y + h - 6 : y + 14;
+                  // Positive bar: 바 외부 상단 바로 위 (y - 5)
+                  // Negative bar: 바 내부 zero line 바로 아래 (y + 14) — 유지
+                  const cy = n >= 0 ? y - 5 : y + 14;
                   return (
                     <text
                       x={cx}
