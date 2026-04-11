@@ -96,8 +96,8 @@ export function EventMarker({ signals }: EventMarkerProps) {
                   </div>
                 </div>
                 {/* Reasoning — 날짜 바로 좌측, 항상 표시 */}
-                <p className="flex-1 self-center text-xs leading-relaxed text-muted-foreground">
-                  {signal.reasoning}
+                <p className="flex-1 self-center text-sm leading-relaxed text-white">
+                  • {signal.reasoning}
                 </p>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {new Date(signal.detected_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
