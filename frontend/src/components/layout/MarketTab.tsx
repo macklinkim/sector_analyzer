@@ -51,7 +51,7 @@ export function MarketTab({
           selectedSector={selectedSector}
           onSectorClick={setSelectedSector}
         />
-        <div className="relative">
+        <div className="relative min-h-[480px] lg:min-h-0">
           <div className="absolute inset-0">
             <NewsImpactFeed
               articles={newsData.articles}
