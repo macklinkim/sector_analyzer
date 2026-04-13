@@ -277,8 +277,8 @@ class SupabaseService:
             return (
                 self.client.table("news_summaries")
                 .select("*")
-                .order("impact_score", desc=True)
                 .order("analyzed_at", desc=True)
+                .order("impact_score", desc=True)
                 .limit(limit)
                 .execute()
             )
