@@ -29,7 +29,7 @@ export function MarketTab({
       id="panel-market"
       role="tabpanel"
       aria-labelledby="tab-market"
-      className="space-y-4 p-4"
+      className="space-y-3 p-2 sm:space-y-4 sm:p-4"
     >
       {/* Row 1: SectorHeatmap (풀폭) */}
       <SectorHeatmap
