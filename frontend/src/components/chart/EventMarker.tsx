@@ -66,53 +66,51 @@ export function EventMarker({ signals }: EventMarkerProps) {
                 grade.bg,
               )}
             >
-              <div className="flex items-center gap-3">
-                <span className="text-lg">{grade.icon}</span>
-                <div className="min-w-0 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold", grade.bg, grade.text)}>
-                      {grade.label}
-                    </span>
-                    <Badge
-                      variant={signal.signal_type.includes("in") ? "bullish" : "bearish"}
-                      className="text-[10px] px-1.5 py-0"
-                    >
-                      {typeLabel}
-                    </Badge>
-                    <span className="text-sm font-semibold text-foreground truncate">
-                      {sector}
-                      <span className="ml-1 text-xs font-normal text-muted-foreground">
-                        {getSectorLabel(sector)}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-center gap-3">
-                    <ConfidenceBar score={signal.confidence_score ?? 0.5} />
-                    {signal.macro_environment && (
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                        {signal.macro_environment}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {/* Reasoning — 날짜 바로 좌측, 항상 표시 */}
-                <div
-                  className={cn(
-                    "flex-1 self-center rounded-md border-l-2 bg-white/[0.03] px-3 py-2",
-                    grade.border,
-                  )}
+              {/* Row 1: 아이콘 + 뱃지 + 섹터 + 날짜 */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-lg leading-none">{grade.icon}</span>
+                <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold", grade.bg, grade.text)}>
+                  {grade.label}
+                </span>
+                <Badge
+                  variant={signal.signal_type.includes("in") ? "bullish" : "bearish"}
+                  className="text-[10px] px-1.5 py-0"
                 >
-                  <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <span>✦</span>
-                    <span>AI Analysis</span>
-                  </div>
-                  <p className="text-sm leading-relaxed text-white break-words">
-                    {signal.reasoning}
-                  </p>
-                </div>
-                <span className="shrink-0 text-xs text-muted-foreground">
+                  {typeLabel}
+                </Badge>
+                <span className="text-sm font-semibold text-foreground">
+                  {sector}
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">
+                    {getSectorLabel(sector)}
+                  </span>
+                </span>
+                <span className="ml-auto text-xs text-muted-foreground">
                   {new Date(signal.detected_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
                 </span>
+              </div>
+              {/* Row 2: 확신도 + 매크로 환경 */}
+              <div className="mt-1.5 flex items-center gap-3">
+                <ConfidenceBar score={signal.confidence_score ?? 0.5} />
+                {signal.macro_environment && (
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    {signal.macro_environment}
+                  </span>
+                )}
+              </div>
+              {/* Row 3: AI Reasoning */}
+              <div
+                className={cn(
+                  "mt-2 rounded-md border-l-2 bg-white/[0.03] px-3 py-2",
+                  grade.border,
+                )}
+              >
+                <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span>✦</span>
+                  <span>AI Analysis</span>
+                </div>
+                <p className="text-sm leading-relaxed text-white break-words">
+                  {signal.reasoning}
+                </p>
               </div>
             </div>
           );
