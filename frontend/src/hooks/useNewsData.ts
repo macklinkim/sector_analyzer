@@ -54,10 +54,7 @@ export function useNewsData(): NewsData & { refresh: () => void } {
   }, []);
 
   useEffect(() => {
-    const cached = getCached<CachedNewsData>(CACHE_KEY);
-    if (!cached) {
-      fetchData();
-    }
+    fetchData();
   }, [fetchData]);
 
   return { ...data, refresh: fetchData };

@@ -54,10 +54,7 @@ export function useAnalysisData(): AnalysisData & { refresh: () => void } {
   }, []);
 
   useEffect(() => {
-    const cached = getCached<CachedAnalysisData>(CACHE_KEY);
-    if (!cached) {
-      fetchData();
-    }
+    fetchData();
   }, [fetchData]);
 
   return { ...data, refresh: fetchData };

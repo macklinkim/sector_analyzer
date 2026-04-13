@@ -70,10 +70,7 @@ export function useMarketData(): MarketData & { refresh: () => void } {
   }, []);
 
   useEffect(() => {
-    const cached = getCached<CachedMarketData>(CACHE_KEY);
-    if (!cached) {
-      fetchData();
-    }
+    fetchData();
   }, [fetchData]);
 
   return { ...data, refresh: fetchData };
