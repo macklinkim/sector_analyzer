@@ -594,7 +594,26 @@ class MarketAnalysisState(TypedDict):
 | GET | `/api/analysis/report` | 최신 AI 분석 리포트 |
 | GET | `/api/analysis/scoreboards` | 섹터 스코어보드 (12개) |
 | GET | `/api/analysis/signals` | 로테이션 시그널 (최근 20건) |
-| POST | `/api/analysis/trigger` | 수동 파이프라인 실행 (X-API-Key 필요) |
+| POST | `/api/analysis/trigger` | 통합 파이프라인 실행 (X-API-Key 필요) |
+| POST | `/api/analysis/trigger/data` | Data Agent만 실행: Yahoo Finance 시장/섹터 수집 → DB |
+| POST | `/api/analysis/trigger/news` | News Agent만 실행: 뉴스 수집 + AI 분류 → DB |
+| POST | `/api/analysis/trigger/analyze` | Analyst Agent만 실행: DB 최신 data+news → AI 분석 → DB |
+
+#### 분할 트리거 사용법 (2026-04-13 추가)
+
+`/trigger/data`와 `/trigger/news`는 서로 독립적이므로 **병렬 호출 가능**. `/trigger/analyze`는 data+news가 DB에 저장된 후 호출해야 함.
+
+```
+┌─ POST /trigger/data  (Yahoo Finance)  ─┐
+│                                         ├─→ POST /trigger/analyze (AI 분석)
+└─ POST /trigger/news  (NewsAPI + AI)    ─┘
+```
+
+모든 trigger 엔드포인트는 `X-API-Key` 헤더 필수:
+```bash
+curl -X POST https://sector-analyzer.onrender.com/api/analysis/trigger/data \
+  -H "X-API-Key: your-trigger-key"
+```
 
 ---
 
@@ -682,7 +701,7 @@ scheduler.add_job(run_batch, CronTrigger(hour=8, minute=30), args=["pre_market"]
 scheduler.add_job(run_batch, CronTrigger(hour=17, minute=0), args=["post_market"])
 ```
 
-### Batch Flow
+### Batch Flow (통합)
 
 ```
 run_batch("pre_market")
@@ -691,6 +710,25 @@ run_batch("pre_market")
   --> _persist_results(result, svc)    # Supabase 저장
       --> indices, sectors, indicators, news, regime, scoreboards, signals, report
 ```
+
+### 분할 트리거 (2026-04-13 추가)
+
+Render Free tier spin-down 문제 대응을 위해 외부 cron(cron-job.org)에서 분할 호출하는 방식 도입.
+
+```
+[cron-job.org]
+  12:25 UTC  GET  /health                      ← Render wake-up
+  12:30 UTC  POST /api/analysis/trigger/data   ← Yahoo Finance (병렬)
+  12:30 UTC  POST /api/analysis/trigger/news   ← NewsAPI + AI 분류 (병렬)
+  12:35 UTC  POST /api/analysis/trigger/analyze ← DB에서 최신 data+news → Analyst Agent
+```
+
+| 단계 | 엔드포인트 | 소요 시간 | 독립성 |
+|------|-----------|----------|:------:|
+| Wake-up | `GET /health` | ~30초 (cold start) | - |
+| Data 수집 | `POST /trigger/data` | ~30초 | ✅ |
+| News 수집 | `POST /trigger/news` | ~60초 (Claude AI 분류 포함) | ✅ |
+| AI 분석 | `POST /trigger/analyze` | ~60초 (Claude AI) | ❌ data+news 완료 후 |
 
 ---
 
