@@ -17,7 +17,7 @@ const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 
 function MiniChart({ data, positive }: { data: SparkPoint[]; positive: boolean }) {
   if (data.length < 2) {
-    return <div className="h-12 w-full" />;
+    return <div className="h-[62px] w-full" />;
   }
 
   const lineColor = positive ? "#22c55e" : "#ef4444";
@@ -33,7 +33,7 @@ function MiniChart({ data, positive }: { data: SparkPoint[]; positive: boolean }
 
   return (
     <div className="relative">
-      <ResponsiveContainer width="100%" height={48}>
+      <ResponsiveContainer width="100%" height={62}>
         <AreaChart data={data} margin={{ top: 4, right: 2, bottom: 0, left: 2 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -147,7 +147,7 @@ export function SectorSparkline({ sectors, selectedSector, onSectorClick }: Sect
               {loaded ? (
                 <MiniChart data={history} positive={sector.change_percent >= 0} />
               ) : (
-                <div className="h-12 w-full animate-pulse rounded bg-muted/30" />
+                <div className="h-[62px] w-full animate-pulse rounded bg-muted/30" />
               )}
             </div>
             <span className={cn("text-right font-mono text-xs font-medium", getChangeColor(sector.change_percent))}>

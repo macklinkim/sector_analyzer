@@ -59,7 +59,7 @@ function CustomContent(props: any) {
           </text>
           {shortName && (
             <text x={x + width / 2} y={y + height / 2 + 16} textAnchor="middle"
-              fill="rgba(255,255,255,0.8)" fontSize={8}>
+              fill="rgba(255,255,255,0.8)" fontSize={width > 80 ? 11 : 9}>
               {shortName}
             </text>
           )}
