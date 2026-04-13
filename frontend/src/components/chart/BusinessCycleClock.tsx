@@ -63,7 +63,7 @@ export function BusinessCycleClock({ regime, loading }: BusinessCycleClockProps)
   if (loading || !regime) {
     return (
       <div className="rounded-lg border border-border bg-card p-4">
-        <div className="h-[280px] animate-pulse rounded bg-muted" />
+        <div className="aspect-square w-full max-w-[360px] mx-auto animate-pulse rounded bg-muted" />
       </div>
     );
   }
@@ -81,7 +81,7 @@ export function BusinessCycleClock({ regime, loading }: BusinessCycleClockProps)
         Business Cycle Clock
       </h3>
 
-      <div className="relative mx-auto h-[360px] w-[360px]">
+      <div className="relative mx-auto aspect-square w-full max-w-[360px]">
         {/* Axis labels */}
         <span className="absolute -top-1 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground">
           Growth ↑
@@ -102,7 +102,7 @@ export function BusinessCycleClock({ regime, loading }: BusinessCycleClockProps)
         {/* Pointer arrow — animated rotation */}
         <motion.div
           className="absolute left-1/2 top-1/2 z-20 origin-bottom"
-          style={{ width: 3, height: 120, marginLeft: -1.5, marginTop: -120 }}
+          style={{ width: 3, height: "33%", marginLeft: -1.5, marginTop: "-33%" }}
           initial={{ rotate: 0 }}
           animate={{ rotate: pointerAngle }}
           transition={{ type: "spring", stiffness: 60, damping: 15 }}
@@ -134,7 +134,7 @@ export function BusinessCycleClock({ regime, loading }: BusinessCycleClockProps)
           return (
             <div
               key={q.key}
-              className={`absolute ${posClass} flex h-[174px] w-[174px] flex-col items-center justify-center rounded-lg transition-all ${
+              className={`absolute ${posClass} flex h-[calc(50%-4px)] w-[calc(50%-4px)] flex-col items-center justify-center rounded-lg transition-all ${
                 isActive
                   ? `${q.bgColor} ring-1 ring-white/20`
                   : "bg-muted/30 opacity-50"
