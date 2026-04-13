@@ -383,6 +383,128 @@ async def trigger_analyze(
         raise HTTPException(status_code=500, detail=f"Analyze pipeline failed: {e}")
 
 
+@router.post("/trigger/all")
+async def trigger_all(
+    x_api_key: str = Header(..., alias="X-API-Key"),
+    settings: Settings = Depends(get_settings),
+):
+    """전체 파이프라인 분할 실행: data+news 병렬 → analyze 순차.
+
+    cron-job.org 등 외부 cron에서 이 URL 하나만 호출하면 됨.
+    응답 timeout과 무관하게 서버에서 전체 처리 완료.
+    """
+    import asyncio
+
+    _verify_api_key(x_api_key, settings)
+    logger.info("trigger/all: starting full pipeline")
+
+    saved_all: dict[str, dict] = {}
+
+    # --- Step 1: data + news 병렬 ---
+    async def _run_data() -> dict:
+        from app.agents.data_agent import data_agent_node
+        from app.agents.state import create_initial_state
+
+        state = create_initial_state("all_trigger")
+        result = await data_agent_node(state, {"configurable": {"settings": settings}})
+        svc = SupabaseService(settings)
+        return _persist_market_data(result.get("market_data"), svc)
+
+    async def _run_news() -> dict:
+        from app.agents.news_agent import news_agent_node
+        from app.agents.state import create_initial_state
+
+        state = create_initial_state("all_trigger")
+        result = await news_agent_node(state, {"configurable": {"settings": settings}})
+        svc = SupabaseService(settings)
+        return _persist_news_data(result.get("news_data"), svc, batch_type="all_trigger")
+
+    data_result, news_result = await asyncio.gather(
+        _run_data(),
+        _run_news(),
+        return_exceptions=True,
+    )
+
+    if isinstance(data_result, Exception):
+        logger.error("trigger/all data stage failed: %s", data_result)
+        saved_all["data"] = {"error": str(data_result)}
+    else:
+        saved_all["data"] = data_result
+        logger.info("trigger/all data saved: %s", data_result)
+
+    if isinstance(news_result, Exception):
+        logger.error("trigger/all news stage failed: %s", news_result)
+        saved_all["news"] = {"error": str(news_result)}
+    else:
+        saved_all["news"] = news_result
+        logger.info("trigger/all news saved: %s", news_result)
+
+    # data와 news 둘 다 실패하면 analyze 스킵
+    if isinstance(data_result, Exception) and isinstance(news_result, Exception):
+        logger.error("trigger/all: both data and news failed, skipping analyze")
+        return {"status": "partial_failure", "saved": saved_all}
+
+    # --- Step 2: analyze ---
+    try:
+        from app.agents.analyst_agent import analyst_agent_node
+        from app.agents.state import MarketAnalysisState, MarketData, NewsData
+
+        svc = SupabaseService(settings)
+
+        indices = svc.get_latest_indices()
+        sectors = svc.get_latest_sectors()
+        indicators = svc.get_latest_economic_indicators()
+
+        momentum: dict[str, dict] = {}
+        relative_strength: dict[str, float] = {}
+        for sec in sectors:
+            sym = sec.get("etf_symbol", "")
+            momentum[sym] = {
+                "momentum_1w": sec.get("momentum_1w", 0),
+                "momentum_1m": sec.get("momentum_1m", 0),
+                "momentum_3m": sec.get("momentum_3m", 0),
+                "momentum_6m": sec.get("momentum_6m", 0),
+                "momentum_1y": sec.get("momentum_1y", 0),
+            }
+            relative_strength[sym] = sec.get("relative_strength", 0.0) or 0.0
+
+        market_data = MarketData(
+            indices=indices,
+            sectors=sectors,
+            economic_indicators=indicators,
+            momentum=momentum,
+            relative_strength=relative_strength,
+        )
+
+        articles = svc.get_latest_news_articles(limit=40)
+        articles_by_category: dict[str, list[dict]] = {}
+        for a in articles:
+            cat = a.get("category", "general")
+            articles_by_category.setdefault(cat, []).append(a)
+
+        news_data = NewsData(articles_by_category=articles_by_category)
+
+        state: MarketAnalysisState = {
+            "batch_type": "all_trigger",
+            "triggered_at": datetime.utcnow().isoformat() + "Z",
+            "market_data": market_data,
+            "news_data": news_data,
+            "news_fallback_used": False,
+            "analysis_results": None,
+        }
+        result = await analyst_agent_node(state, {"configurable": {"settings": settings}})
+        analysis = result.get("analysis_results")
+        saved_all["analyze"] = _persist_analysis(analysis, svc, batch_type="all_trigger")
+        logger.info("trigger/all analyze saved: %s", saved_all["analyze"])
+    except Exception as e:
+        logger.error("trigger/all analyze stage failed: %s", e)
+        saved_all["analyze"] = {"error": str(e)}
+
+    status = "completed" if "error" not in str(saved_all.get("analyze", {})) else "partial_failure"
+    logger.info("trigger/all finished: %s", status)
+    return {"status": status, "saved": saved_all}
+
+
 # ---------------------------------------------------------------------------
 # 분할 저장 헬퍼
 # ---------------------------------------------------------------------------
