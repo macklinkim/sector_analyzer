@@ -307,8 +307,7 @@ ANALYST_SYSTEM_PROMPT = """미국 주식 섹터 로테이션 분석가로서 **3
   },
   "scoreboards": [{
     "sector_name": "...", "etf_symbol": "...",
-    "base_score": 0.0, "override_score": 0.0,
-    "news_sentiment_score": 0.0, "momentum_score": 0.0,
+    "momentum_score": 0.0,
     "final_score": 0.0, "rank": 1,
     "recommendation": "overweight|neutral|underweight",
     "reasoning": "한글 설명"

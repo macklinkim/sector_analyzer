@@ -19,6 +19,13 @@ function getRecommendationVariant(rec: string): "bullish" | "bearish" | "default
   return "default";
 }
 
+function getRecommendationLabel(rec: string): string {
+  if (rec === "overweight") return "비중확대";
+  if (rec === "underweight") return "비중축소";
+  if (rec === "neutral") return "중립";
+  return rec;
+}
+
 export function AiScreenerTable({ scoreboards, loading, selectedSector, onSectorClick }: AiScreenerTableProps) {
   if (loading) {
     return (
@@ -74,7 +81,7 @@ export function AiScreenerTable({ scoreboards, loading, selectedSector, onSector
                   </td>
                   <td className="px-2 py-2 text-center">
                     <Badge variant={getRecommendationVariant(sb.recommendation)}>
-                      {sb.recommendation}
+                      {getRecommendationLabel(sb.recommendation)}
                     </Badge>
                   </td>
                 </tr>
