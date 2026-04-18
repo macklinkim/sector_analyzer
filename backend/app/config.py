@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     # Supabase Auth JWT secret (Dashboard → Settings → API → JWT Secret)
     supabase_jwt_secret: str = ""
 
+    # Claude model per analysis type — cheaper models for simple classification,
+    # reserve the stronger model for the analyst's multi-factor reasoning.
+    claude_model_news: str = "claude-haiku-4-5-20251001"
+    claude_model_crisis: str = "claude-haiku-4-5-20251001"
+    claude_model_analyst: str = "claude-sonnet-4-20250514"
+
     # Scheduler
     pre_market_time: str = "08:30"
     post_market_time: str = "17:00"

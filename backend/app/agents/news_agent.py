@@ -64,8 +64,8 @@ async def _analyze_news_with_ai(
     summaries: list[dict] = []
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=3000,
+            model=settings.claude_model_news,
+            max_tokens=1500,
             messages=[{"role": "user", "content": prompt}],
         )
         raw = response.content[0].text.strip()

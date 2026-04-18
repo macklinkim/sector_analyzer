@@ -70,8 +70,8 @@ async def filter_crises_with_ai(headlines: list[dict], settings: Settings) -> li
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=2000,
+            model=settings.claude_model_crisis,
+            max_tokens=1200,
             messages=[{"role": "user", "content": prompt}],
         )
         text = response.content[0].text.strip()
