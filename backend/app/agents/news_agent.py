@@ -60,6 +60,8 @@ async def _analyze_news_with_ai(
 
     prompt = NEWS_ANALYSIS_PROMPT.format(titles_text=titles_text)
 
+    raw = ""
+    summaries: list[dict] = []
     try:
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
@@ -70,19 +72,38 @@ async def _analyze_news_with_ai(
         start = raw.find("[")
         end = raw.rfind("]") + 1
         if start >= 0 and end > start:
-            summaries = json.loads(raw[start:end])
+            try:
+                summaries = json.loads(raw[start:end])
+            except json.JSONDecodeError as je:
+                logger.error(
+                    "News AI JSON parse failed: %s — raw (first 800 chars): %s",
+                    je, raw[:800],
+                )
         else:
-            summaries = []
+            logger.error(
+                "News AI response missing JSON array brackets — raw (first 800 chars): %s",
+                raw[:800],
+            )
     except Exception as e:
-        logger.error("News AI analysis failed: %s", e)
-        summaries = []
+        logger.error("News AI analysis failed (%d articles): %s", len(articles), e)
 
-    # Merge summaries back with article metadata, deduplicate by URL
-    summary_map = {s["index"]: s for s in summaries if isinstance(s, dict)}
+    if not summaries:
+        logger.warning(
+            "News AI analysis produced 0 summaries from %d articles — skipping DB save for these rows",
+            len(articles),
+        )
+
+    # Build keyed map; only articles the AI actually analyzed end up in the DB.
+    # DISCARDed or unanalyzed articles are dropped (was the source of the null-field noise).
+    summary_map = {s["index"]: s for s in summaries if isinstance(s, dict) and "index" in s}
     seen_urls: set[str] = set()
     result: list[dict] = []
+    dropped_discard = 0
     for i, article in enumerate(articles):
-        s = summary_map.get(i + 1, {})
+        s = summary_map.get(i + 1)
+        if s is None:
+            dropped_discard += 1
+            continue
         url = article.get("url", "")
         if not url or url in seen_urls:
             continue
@@ -105,6 +126,11 @@ async def _analyze_news_with_ai(
             "action_item": s.get("action_item"),
         })
 
+    if dropped_discard:
+        logger.info(
+            "News AI kept %d summaries, dropped %d (DISCARD or unanalyzed)",
+            len(result), dropped_discard,
+        )
     return result
 
 
@@ -150,14 +176,18 @@ async def news_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
         await newsapi.close()
 
     # --- Step 2: AI-analyze news summaries ---
+    import asyncio as _asyncio
     all_articles = [a for articles in articles_by_category.values() for a in articles]
     article_summaries = await _analyze_news_with_ai(all_articles, settings)
     logger.info("News Agent: AI-analyzed %d articles → %d summaries", len(all_articles), len(article_summaries))
+
+    await _asyncio.sleep(10)  # Rate limit: 10s between AI calls
 
     # --- Step 3: Fetch & filter global crises ---
     global_crises: list[dict] = []
     try:
         headlines = await fetch_world_headlines(limit=20)
+        await _asyncio.sleep(5)  # Rate limit: 5s before AI crisis filtering
         global_crises = await filter_crises_with_ai(headlines, settings)
         logger.info("News Agent: filtered %d global crises", len(global_crises))
     except Exception as e:
