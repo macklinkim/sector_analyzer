@@ -274,106 +274,82 @@ def extract_news_sentiment(news_data: object) -> dict[str, float]:
 # Step 3: Claude AI final analysis with full context
 # ---------------------------------------------------------------------------
 
-ANALYSIS_PROMPT = """당신은 미국 주식 섹터 로테이션 전문 분석가입니다. 아래 데이터를 기반으로 **엄격한 3단계 검증**을 거쳐 시그널을 생성하세요.
+ANALYST_SYSTEM_PROMPT = """미국 주식 섹터 로테이션 분석가로서 **3단계 검증** 후 시그널을 생성하세요.
 
-## 현재 매크로 환경 (수치 포함)
+## Regime 판정
+- Goldilocks: 성장↑ 물가↓ (Risk-On)
+- Reflation: 성장↑ 물가↑ (Overheating)
+- Stagflation: 성장↓ 물가↑ (Worst)
+- Deflation: 성장↓ 물가↓ (Safe Haven)
+
+## 시그널 등급
+- [MAJOR] Regime Shift: 매크로 변화 + RS>2% 골든크로스 + 거래량↑. 섹터당 월 1~2회 미만, 확신도 ≥0.7.
+- [ALERT] Momentum Surge: 뉴스 촉매 + 1W 모멘텀 급증 + RS>0. 확신도 0.5~0.7.
+- [WATCH] RS Improving: RS (-)→(+), S&P500 대비 덜 하락. 확신도 0.3~0.5.
+
+## 제약 규칙
+- rotate_in엔 대응 rotate_out 섹터 필수 명시. 3개 이상 rotate_in이면 상위 2개만.
+- regime_shift는 배치당 최대 1건.
+- 매크로 지표(금리/달러/유가/금)의 **수치·변화폭** 반드시 근거로 인용. 뉴스 센티먼트 단독 판단 금지.
+- cross_validation="divergence_suppressed"면 시그널 금지. "contrarian"이면 confidence -0.1.
+- 매크로-RS 불일치(예: 금리↑시 Tech RS↑)는 Fake Signal로 제외.
+- 모든 섹터 동시 Regime Shift 금지. 최대 2~3개 시그널.
+- 사전필터 score<0.3 후보는 제외.
+
+## 응답 형식 (JSON만, 다른 텍스트 없이):
+{
+  "regime": {
+    "regime": "goldilocks|reflation|stagflation|deflation",
+    "growth_direction": "high|low",
+    "inflation_direction": "high|low",
+    "regime_probabilities": {"goldilocks": 0.0, "reflation": 0.0, "stagflation": 0.0, "deflation": 0.0},
+    "reasoning": "한글 설명"
+  },
+  "scoreboards": [{
+    "sector_name": "...", "etf_symbol": "...",
+    "base_score": 0.0, "override_score": 0.0,
+    "news_sentiment_score": 0.0, "momentum_score": 0.0,
+    "final_score": 0.0, "rank": 1,
+    "recommendation": "overweight|neutral|underweight",
+    "reasoning": "한글 설명"
+  }],
+  "rotation_signals": [{
+    "signal_type": "rotate_in|rotate_out|regime_shift",
+    "signal_grade": "MAJOR|ALERT|WATCH",
+    "from_sector": null, "to_sector": "...",
+    "strength": 0.0, "final_score": 0.0,
+    "confidence_score": 0.0,
+    "macro_environment": "...",
+    "reasoning": "한글 설명 (매크로→RS→모멘텀 3단계 근거)"
+  }],
+  "report_summary": "한글 종합 요약",
+  "key_highlights": ["포인트1", "포인트2", "포인트3"]
+}"""
+
+
+def _build_analyst_user_content(
+    macro_env_json: str,
+    candidates_json: str,
+    momentum_detail: str,
+    news_summary: str,
+    sector_mapping_json: str,
+    environment: str,
+) -> str:
+    """Dynamic context sent on every call — not cache-eligible."""
+    return f"""## 매크로 환경 (현재: {environment})
 {macro_env_json}
 
-※ indicator_values에 각 지표의 실제 수치(value)와 변화율(change_percent)이 포함되어 있습니다.
-분석 시 반드시 이 수치를 인용하여 정량적 근거를 제시하세요.
-
-## 시그널 후보 (사전 필터링 결과)
+## 시그널 후보 (사전필터 통과, cross_validation 포함)
 {candidates_json}
 
-## 섹터별 모멘텀 & RS 상세
+## 섹터별 모멘텀+RS
 {momentum_detail}
 
 ## 뉴스 요약
 {news_summary}
 
 ## 섹터-국면 매핑 (Override 규칙 포함)
-{sector_mapping}
-
----
-
-## 분석 지침
-
-### 국면(Regime) 판정
-매크로 환경({environment})을 고려하여 현재 Macro Regime을 판정하세요.
-- Goldilocks: 성장↑ + 물가↓ — Risk-On
-- Reflation: 성장↑ + 물가↑ — Overheating
-- Stagflation: 성장↓ + 물가↑ — Worst
-- Deflation: 성장↓ + 물가↓ — Safe Haven
-
-### 시그널 등급 (엄격히 제한)
-1. **[MAJOR]** Regime Shift (강력 전환):
-   - 조건: 매크로 환경 변화 + RS > 2% 골든크로스 + 거래량 동반 상승
-   - 빈도: 한 달에 섹터당 1~2회 미만. 확신도 0.7 이상만.
-
-2. **[ALERT]** Momentum Surge (수급 포착):
-   - 조건: 뉴스 촉매 + 1W 모멘텀 급증 + RS 양수
-   - 확신도 0.5~0.7
-
-3. **[WATCH]** RS Improving (개선 중):
-   - 조건: RS 마이너스→플러스 전환 중, S&P500 대비 덜 하락
-   - 확신도 0.3~0.5
-
-### 자금 흐름 일관성 규칙
-- rotate_in 시그널을 생성할 때, 반드시 대응하는 rotate_out 섹터를 명시하라.
-- "어디서 빠져서 어디로 들어가는가"를 한 문장으로 요약하라.
-- 3개 이상 섹터가 동시에 rotate_in이면 → 가장 강한 2개만 남기고 나머지 제거.
-- regime_shift는 배치당 최대 1건만 허용.
-
-### 다변수 분석 요구
-- 매크로 지표(금리, 달러, 유가, 금)의 **수치와 변화폭**을 근거에 반드시 인용하라.
-- "이 수치가 해당 섹터 밸류에이션에 미치는 영향을 정량적으로 설명하라."
-- 뉴스 센티먼트만으로 시그널을 생성하지 말 것 — 반드시 수치 지표가 뒷받침해야 함.
-
-### 교차 검증 결과
-- 아래 후보에는 센티먼트-모멘텀 교차 검증 결과(cross_validation)가 포함되어 있음.
-- "divergence_suppressed" 후보는 시그널 생성 금지.
-- "contrarian" 후보는 confidence를 0.1 감점하라.
-
-### Fake Signal 필터링
-- 매크로 환경과 RS가 불일치하면 (예: 금리 상승기에 기술주 RS 상승) → Fake Signal로 제외
-- 모든 섹터에 동시 Regime Shift → 잘못된 분석. 최대 2~3개 시그널만.
-- 사전 필터 score가 0.3 미만인 후보는 시그널 생성 금지.
-
----
-
-## 응답 형식 (JSON만, 다른 텍스트 없이):
-{{
-  "regime": {{
-    "regime": "goldilocks|reflation|stagflation|deflation",
-    "growth_direction": "high|low",
-    "inflation_direction": "high|low",
-    "regime_probabilities": {{"goldilocks": 0.0, "reflation": 0.0, "stagflation": 0.0, "deflation": 0.0}},
-    "reasoning": "한글 설명"
-  }},
-  "scoreboards": [
-    {{
-      "sector_name": "...", "etf_symbol": "...",
-      "base_score": 0.0, "override_score": 0.0,
-      "news_sentiment_score": 0.0, "momentum_score": 0.0,
-      "final_score": 0.0, "rank": 1,
-      "recommendation": "overweight|neutral|underweight",
-      "reasoning": "한글 설명"
-    }}
-  ],
-  "rotation_signals": [
-    {{
-      "signal_type": "rotate_in|rotate_out|regime_shift",
-      "signal_grade": "MAJOR|ALERT|WATCH",
-      "from_sector": null, "to_sector": "...",
-      "strength": 0.0, "final_score": 0.0,
-      "confidence_score": 0.0,
-      "macro_environment": "{environment}",
-      "reasoning": "한글 설명 (매크로→RS→모멘텀 3단계 근거)"
-    }}
-  ],
-  "report_summary": "한글 종합 요약",
-  "key_highlights": ["포인트1", "포인트2", "포인트3"]
-}}"""
+{sector_mapping_json}"""
 
 
 async def analyst_agent_node(state: MarketAnalysisState, config: RunnableConfig) -> dict:
@@ -435,19 +411,32 @@ async def analyst_agent_node(state: MarketAnalysisState, config: RunnableConfig)
         for sym in [sec.get("symbol", sec.get("etf_symbol", ""))]
     }, default=str, ensure_ascii=False)
 
-    prompt = ANALYSIS_PROMPT.format(
+    user_content = _build_analyst_user_content(
         macro_env_json=json.dumps(macro_env, default=str, ensure_ascii=False),
         candidates_json=json.dumps(top_candidates, default=str, ensure_ascii=False),
         momentum_detail=momentum_detail,
         news_summary=news_summary,
-        sector_mapping=json.dumps(sector_mapping, default=str, ensure_ascii=False),
+        sector_mapping_json=json.dumps(sector_mapping, default=str, ensure_ascii=False),
         environment=macro_env["environment"],
+    )
+
+    logger.info(
+        "Analyst AI prompt preview (model=%s, user_chars=%d): %s",
+        settings.claude_model_analyst, len(user_content), user_content[:600],
     )
 
     try:
         response = client.messages.create(
-            model=settings.claude_model_analyst, max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
+            model=settings.claude_model_analyst,
+            max_tokens=4096,
+            system=[
+                {
+                    "type": "text",
+                    "text": ANALYST_SYSTEM_PROMPT,
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+            messages=[{"role": "user", "content": user_content}],
         )
         raw = response.content[0].text.strip()
         # Extract JSON
