@@ -20,7 +20,7 @@ interface CachedMarketData {
   sectors: Sector[];
   indicators: EconomicIndicator[];
   regime: MacroRegime | null;
-  lastUpdated: string;
+  lastUpdated: string | null;
 }
 
 export function useMarketData(): MarketData & { refresh: () => void } {
@@ -49,7 +49,9 @@ export function useMarketData(): MarketData & { refresh: () => void } {
         api.getIndicators(),
         api.getRegime().catch(() => null),
       ]);
-      const lastUpdated = new Date().toISOString();
+      // lastUpdated = analyst stage 완료 시각 (뉴스/시장/AI 분석 모두 끝난 시점).
+      // regime은 analyst 단계에서 저장되므로 analyzed_at이 곧 파이프라인 완료 시각.
+      const lastUpdated = regime?.analyzed_at ?? null;
       setCache(CACHE_KEY, { indices, sectors, indicators, regime, lastUpdated });
       setData({
         indices,
