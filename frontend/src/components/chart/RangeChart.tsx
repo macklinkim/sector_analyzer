@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSectorLabel } from "@/lib/i18n";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import type { Sector } from "@/types";
 
 interface RangeChartProps {
@@ -17,43 +17,61 @@ function BulletBar({ sector, estimated }: { sector: Sector; estimated: boolean }
   if (low >= high) return null;
 
   const positionPercent = Math.min(Math.max(((current - low) / (high - low)) * 100, 0), 100);
+  const isNearHigh = positionPercent >= 70;
+  const isNearLow = positionPercent <= 30;
+  const currentColor = isNearHigh
+    ? "text-emerald-400"
+    : isNearLow
+      ? "text-rose-400"
+      : "text-amber-300";
+  const pinGlow = isNearHigh
+    ? "shadow-[0_0_6px_rgba(16,185,129,0.9)]"
+    : isNearLow
+      ? "shadow-[0_0_6px_rgba(244,63,94,0.85)]"
+      : "shadow-[0_0_6px_rgba(252,211,77,0.8)]";
 
   return (
-    <div className="grid grid-cols-[4.5rem_4rem_1fr_4rem_4.5rem] items-center gap-2 py-1.5">
-      {/* Sector label */}
-      <span className="text-xs font-medium text-foreground truncate">
-        {getSectorLabel(sector.etf_symbol)}
-        {estimated && <span className="text-[9px] text-muted-foreground ml-0.5">*</span>}
-      </span>
-
-      {/* Low price */}
-      <span className="text-right font-mono text-[11px] text-muted-foreground">
-        {formatPrice(low)}
-      </span>
-
-      {/* Range track */}
-      <div className="relative h-5 rounded-full bg-slate-700/60">
-        {/* Progress fill: low → current */}
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-emerald-500/70"
-          style={{ width: `${positionPercent}%` }}
-        />
-        {/* Current price marker */}
-        <div
-          className="absolute top-0 h-5 w-1 rounded-full bg-white shadow-sm shadow-black/40"
-          style={{ left: `calc(${positionPercent}% - 2px)` }}
-        />
+    <div className="rounded-lg border border-border/40 bg-card/40 px-3 py-2.5">
+      {/* Row 1: sector + current price */}
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <div className="flex min-w-0 items-baseline gap-1">
+          <span className="truncate text-sm font-medium text-foreground">
+            {getSectorLabel(sector.etf_symbol)}
+          </span>
+          {estimated && (
+            <span className="shrink-0 text-[10px] text-muted-foreground">*</span>
+          )}
+          <span className="ml-1 shrink-0 font-mono text-[10px] text-muted-foreground">
+            {positionPercent.toFixed(0)}%
+          </span>
+        </div>
+        <span className={cn("shrink-0 font-mono text-base font-bold tabular-nums", currentColor)}>
+          {formatPrice(current)}
+        </span>
       </div>
 
-      {/* High price */}
-      <span className="font-mono text-[11px] text-muted-foreground">
-        {formatPrice(high)}
-      </span>
-
-      {/* Current price */}
-      <span className="text-right font-mono text-xs font-semibold text-emerald-400">
-        {formatPrice(current)}
-      </span>
+      {/* Row 2: low — bar — high */}
+      <div className="flex items-center gap-2">
+        <span className="w-14 shrink-0 text-right font-mono text-[10px] tabular-nums text-muted-foreground">
+          {formatPrice(low)}
+        </span>
+        <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-slate-700/50">
+          <div
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-slate-500/50 via-amber-500/50 to-emerald-500/80"
+            style={{ width: `${positionPercent}%` }}
+          />
+          <div
+            className={cn(
+              "absolute top-1/2 h-4 w-0.5 -translate-y-1/2 bg-white",
+              pinGlow,
+            )}
+            style={{ left: `calc(${positionPercent}% - 1px)` }}
+          />
+        </div>
+        <span className="w-14 shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+          {formatPrice(high)}
+        </span>
+      </div>
     </div>
   );
 }
@@ -88,7 +106,7 @@ export function RangeChart({ sectors, loading }: RangeChartProps) {
           최저가 — 현재가 위치 — 최고가 (*추정 범위)
         </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-1.5">
         {unique.map((sector) => {
           const hasReal = (sector.week_52_low ?? 0) > 0 && (sector.week_52_high ?? 0) > 0
             && sector.week_52_low! < sector.week_52_high!;
