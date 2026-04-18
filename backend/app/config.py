@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     # Supabase
     supabase_url: str
     supabase_service_key: str
+    # Supabase Auth JWT secret (Dashboard → Settings → API → JWT Secret)
+    supabase_jwt_secret: str = ""
 
     # Scheduler
     pre_market_time: str = "08:30"

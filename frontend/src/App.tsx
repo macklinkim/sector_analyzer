@@ -11,7 +11,7 @@ import { useStickyState } from "@/hooks/useStickyState";
 import type { DashboardTab } from "@/types";
 
 function Dashboard() {
-  const { name } = useAuth();
+  const { identity } = useAuth();
   const marketData = useMarketData();
   const newsData = useNewsData();
   const analysisData = useAnalysisData();
@@ -62,10 +62,12 @@ function Dashboard() {
             본 분석은 AI의 추론이며, 실제 투자 판단의 근거로 사용할 수 없습니다.
           </span>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">{name}</span>
+            <span className="text-xs text-muted-foreground">{identity}</span>
             <button
               type="button"
-              onClick={logout}
+              onClick={() => {
+                void logout();
+              }}
               className="text-xs text-muted-foreground underline hover:text-foreground"
             >
               로그아웃

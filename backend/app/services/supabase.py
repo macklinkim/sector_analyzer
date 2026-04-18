@@ -313,3 +313,21 @@ class SupabaseService:
                 .execute()
             )
         return self._safe_execute(_q).data
+
+    # --- Auth: allowed_emails whitelist ---
+
+    def is_email_allowed(self, email: str) -> bool:
+        normalized = email.strip().lower()
+        if not normalized:
+            return False
+
+        def _q():
+            return (
+                self.client.table("allowed_emails")
+                .select("email")
+                .eq("email", normalized)
+                .limit(1)
+                .execute()
+            )
+        result = self._safe_execute(_q)
+        return bool(result.data)

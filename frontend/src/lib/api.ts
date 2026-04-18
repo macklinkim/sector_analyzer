@@ -1,3 +1,4 @@
+import { getAuthToken } from "@/lib/supabase";
 import type {
   EconomicIndicator,
   GlobalCrisis,
@@ -15,8 +16,13 @@ import type {
 
 const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
-async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`);
+async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  const token = await getAuthToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  const response = await fetch(`${BASE_URL}${path}`, { ...init, headers });
   if (!response.ok) {
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }
@@ -55,4 +61,11 @@ export const api = {
     fetchJson<{ symbol: string; name: string; close: number; change_p: number; volume: number; market_cap: number }[]>(
       `/market/sector-stocks/${etfSymbol}`
     ),
+
+  checkEmail: (email: string) =>
+    fetchJson<{ allowed: boolean }>("/auth/check-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }),
 };
