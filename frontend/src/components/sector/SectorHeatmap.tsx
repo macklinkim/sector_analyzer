@@ -28,10 +28,19 @@ interface TreemapContentProps {
   height: number;
   name: string;
   change_percent: number;
+  etf_symbol?: string;
 }
 
-function CustomTreemapContent({ x, y, width, height, name, change_percent }: TreemapContentProps) {
-  if (width < 40 || height < 30) return null;
+function CustomTreemapContent({ x, y, width, height, name, change_percent, etf_symbol }: TreemapContentProps) {
+  if (width < 18 || height < 16) return null;
+
+  // Narrow cells show the ETF ticker (e.g. XLK) — more identifiable than a
+  // truncated Korean label. Wider cells can fit the full sector name.
+  const useTicker = width < 60;
+  const primary = useTicker && etf_symbol ? etf_symbol : getSectorLabel(name);
+  const nameSize = width > 100 ? 12 : width > 60 ? 10 : width > 36 ? 9 : 8;
+  const pctSize = width > 60 ? 10 : width > 36 ? 8 : 7;
+  const showPct = height >= 30;
 
   return (
     <g>
@@ -45,28 +54,26 @@ function CustomTreemapContent({ x, y, width, height, name, change_percent }: Tre
         stroke="var(--color-background)"
         strokeWidth={2}
       />
-      {width > 60 && (
-        <>
-          <text
-            x={x + width / 2}
-            y={y + height / 2 - 6}
-            textAnchor="middle"
-            fill="white"
-            fontSize={width > 100 ? 12 : 10}
-            fontWeight="bold"
-          >
-            {getSectorLabel(name)}
-          </text>
-          <text
-            x={x + width / 2}
-            y={y + height / 2 + 10}
-            textAnchor="middle"
-            fill="white"
-            fontSize={10}
-          >
-            {formatPercent(change_percent)}
-          </text>
-        </>
+      <text
+        x={x + width / 2}
+        y={y + height / 2 - (showPct ? 6 : 0)}
+        textAnchor="middle"
+        fill="white"
+        fontSize={nameSize}
+        fontWeight="bold"
+      >
+        {primary}
+      </text>
+      {showPct && (
+        <text
+          x={x + width / 2}
+          y={y + height / 2 + 10}
+          textAnchor="middle"
+          fill="white"
+          fontSize={pctSize}
+        >
+          {formatPercent(change_percent)}
+        </text>
       )}
     </g>
   );
@@ -104,7 +111,7 @@ export function SectorHeatmap({ sectors, loading, onSectorClick }: SectorHeatmap
             data={treemapData}
             dataKey="size"
             stroke="none"
-            content={<CustomTreemapContent x={0} y={0} width={0} height={0} name="" change_percent={0} />}
+            content={<CustomTreemapContent x={0} y={0} width={0} height={0} name="" change_percent={0} etf_symbol="" />}
             onClick={(node) => {
               if (onSectorClick && node?.name) {
                 onSectorClick(node.name as string);
