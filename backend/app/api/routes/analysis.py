@@ -395,7 +395,12 @@ async def trigger_all(
     """
     import asyncio
 
+    from app.services.market_calendar import is_market_open_today
+
     _verify_api_key(x_api_key, settings)
+    if not is_market_open_today():
+        logger.info("trigger/all: market closed (weekend/NYSE holiday) — skipping")
+        return {"status": "skipped", "reason": "market_closed"}
     logger.info("trigger/all: starting full pipeline")
 
     saved_all: dict[str, dict] = {}

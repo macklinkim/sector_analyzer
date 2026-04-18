@@ -22,6 +22,7 @@ dependencies = [
     "yfinance>=0.2.40",
     "pyjwt>=2.8.0",
     "email-validator>=2.0.0",
+    "holidays>=0.50",
 ]
 
 [tool.setuptools.packages.find]
