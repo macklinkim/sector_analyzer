@@ -28,10 +28,10 @@ export function TickerBar({ indices, indicators, loading }: TickerBarProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 sm:gap-x-5 sm:gap-y-1">
       {/* Indices with price + change */}
       {indices.map((idx) => (
-        <div key={idx.symbol} className="flex items-center gap-1.5 text-sm">
+        <div key={idx.symbol} className="flex items-center gap-1 text-[11px] sm:gap-1.5 sm:text-sm">
           <span className="text-muted-foreground">{getIndexLabel(idx.name)}</span>
           <span className="font-medium text-foreground">{formatPrice(idx.price)}</span>
           <span className={getChangeColor(idx.change_percent)}>
@@ -42,7 +42,7 @@ export function TickerBar({ indices, indicators, loading }: TickerBarProps) {
 
       {/* Divider */}
       {indices.length > 0 && indicators.length > 0 && (
-        <div className="h-4 w-px bg-border" />
+        <div className="h-3 w-px bg-border sm:h-4" />
       )}
 
       {/* Economic Indicators */}
@@ -56,12 +56,12 @@ export function TickerBar({ indices, indicators, loading }: TickerBarProps) {
             : "text-muted-foreground";
         const arrow = ind.change_direction === "up" ? "▲" : ind.change_direction === "down" ? "▼" : "";
         return (
-          <div key={ind.indicator_name} className="flex items-center gap-1.5 text-sm">
+          <div key={ind.indicator_name} className="flex items-center gap-1 text-[11px] sm:gap-1.5 sm:text-sm">
             <span className="text-muted-foreground">{display.label}</span>
             <span className="font-medium text-foreground">
               {display.prefix ?? ""}{formatPrice(ind.value)}
             </span>
-            {arrow && <span className={`text-xs ${dirColor}`}>{arrow}</span>}
+            {arrow && <span className={`text-[10px] sm:text-xs ${dirColor}`}>{arrow}</span>}
           </div>
         );
       })}

@@ -33,12 +33,19 @@ function getHeatmapColor(changePercent: number): string {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CustomContent(props: any) {
   const { x, y, width, height, name, change_p } = props;
-  if (width < 35 || height < 25) return null;
+  if (width < 18 || height < 16) return null;
 
   // Recharts passes all data fields — look up company name from the stockMap
   const companyName: string = props.companyName ?? "";
   const shortName = companyName && companyName !== name ? companyName.slice(0, 7) : "";
   const pct = formatPercent(change_p ?? 0);
+
+  // Font sizing by width tier — smaller text keeps labels visible at narrow widths
+  const nameSize = width > 80 ? 11 : width > 50 ? 9 : width > 30 ? 8 : 7;
+  const pctSize = width > 50 ? 8 : width > 30 ? 7 : 6;
+  const subSize = width > 80 ? 11 : width > 50 ? 9 : 8;
+  const showPct = height >= 28;
+  const showShort = height >= 42 && shortName;
 
   return (
     <g>
@@ -47,23 +54,21 @@ function CustomContent(props: any) {
         fill={getHeatmapColor(change_p ?? 0)}
         stroke="var(--color-background)" strokeWidth={2}
       />
-      {width > 50 && (
-        <>
-          <text x={x + width / 2} y={y + height / 2 - 6} textAnchor="middle"
-            fill="white" fontSize={width > 80 ? 11 : 9} fontWeight="bold">
-            {name}
-          </text>
-          <text x={x + width / 2} y={y + height / 2 + 6} textAnchor="middle"
-            fill="rgba(255,255,255,0.8)" fontSize={8}>
-            {pct}
-          </text>
-          {shortName && (
-            <text x={x + width / 2} y={y + height / 2 + 16} textAnchor="middle"
-              fill="rgba(255,255,255,0.8)" fontSize={width > 80 ? 11 : 9}>
-              {shortName}
-            </text>
-          )}
-        </>
+      <text x={x + width / 2} y={y + height / 2 - (showPct ? 6 : 0)} textAnchor="middle"
+        fill="white" fontSize={nameSize} fontWeight="bold">
+        {name}
+      </text>
+      {showPct && (
+        <text x={x + width / 2} y={y + height / 2 + 6} textAnchor="middle"
+          fill="rgba(255,255,255,0.8)" fontSize={pctSize}>
+          {pct}
+        </text>
+      )}
+      {showShort && (
+        <text x={x + width / 2} y={y + height / 2 + 16} textAnchor="middle"
+          fill="rgba(255,255,255,0.8)" fontSize={subSize}>
+          {shortName}
+        </text>
       )}
     </g>
   );
