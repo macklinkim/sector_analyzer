@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSectorLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { formatPercent, getChangeColor } from "@/lib/utils";
@@ -12,6 +13,7 @@ interface SectorSparklineProps {
   onSectorClick: (sectorName: string) => void;
 }
 
+const PERIOD_DAYS = 30;
 const CACHE_KEY = "sparkline_all";
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 
@@ -99,7 +101,7 @@ export function SectorSparkline({ sectors, selectedSector, onSectorClick }: Sect
     }
 
     try {
-      const result: SectorWithHistory[] = await api.getSectorsWithHistory(30);
+      const result: SectorWithHistory[] = await api.getSectorsWithHistory(PERIOD_DAYS);
       const map: Record<string, SparkPoint[]> = {};
       for (const s of result) {
         map[s.sector] = s.history;
@@ -123,39 +125,47 @@ export function SectorSparkline({ sectors, selectedSector, onSectorClick }: Sect
   });
 
   return (
-    <div className="space-y-1">
-      {unique.map((sector) => {
-        const history = historyMap[sector.etf_symbol] ?? [];
-        return (
-          <button
-            key={sector.etf_symbol}
-            onClick={() => onSectorClick(sector.name)}
-            className={cn(
-              "grid w-full grid-cols-[2.5rem_5rem_1fr_3.5rem] items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/50",
-              selectedSector === sector.name && "bg-muted/70",
-            )}
-          >
-            <span className="font-mono text-[11px] text-muted-foreground">
-              {sector.etf_symbol}
-            </span>
-            <span className="text-sm font-medium text-foreground truncate">
-              {getSectorLabel(sector.etf_symbol) !== sector.etf_symbol
-                ? getSectorLabel(sector.etf_symbol)
-                : sector.name}
-            </span>
-            <div className="min-w-0">
-              {loaded ? (
-                <MiniChart data={history} positive={sector.change_percent >= 0} />
-              ) : (
-                <div className="h-[62px] w-full animate-pulse rounded bg-muted/30" />
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm sm:text-base">섹터별 가격 추이</CardTitle>
+        <span className="text-[10px] text-muted-foreground sm:text-xs">
+          최근 {PERIOD_DAYS}일
+        </span>
+      </CardHeader>
+      <CardContent className="space-y-1 p-2 sm:p-4">
+        {unique.map((sector) => {
+          const history = historyMap[sector.etf_symbol] ?? [];
+          return (
+            <button
+              key={sector.etf_symbol}
+              onClick={() => onSectorClick(sector.name)}
+              className={cn(
+                "grid w-full grid-cols-[2.5rem_5rem_1fr_3.5rem] items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/50",
+                selectedSector === sector.name && "bg-muted/70",
               )}
-            </div>
-            <span className={cn("text-right font-mono text-xs font-medium", getChangeColor(sector.change_percent))}>
-              {formatPercent(sector.change_percent)}
-            </span>
-          </button>
-        );
-      })}
-    </div>
+            >
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {sector.etf_symbol}
+              </span>
+              <span className="text-sm font-medium text-foreground truncate">
+                {getSectorLabel(sector.etf_symbol) !== sector.etf_symbol
+                  ? getSectorLabel(sector.etf_symbol)
+                  : sector.name}
+              </span>
+              <div className="min-w-0">
+                {loaded ? (
+                  <MiniChart data={history} positive={sector.change_percent >= 0} />
+                ) : (
+                  <div className="h-[62px] w-full animate-pulse rounded bg-muted/30" />
+                )}
+              </div>
+              <span className={cn("text-right font-mono text-xs font-medium", getChangeColor(sector.change_percent))}>
+                {formatPercent(sector.change_percent)}
+              </span>
+            </button>
+          );
+        })}
+      </CardContent>
+    </Card>
   );
 }
