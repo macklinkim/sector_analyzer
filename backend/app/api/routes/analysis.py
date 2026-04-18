@@ -223,15 +223,32 @@ def get_scoreboards(
 ):
     if batch_type:
         return svc.get_latest_scoreboards(batch_type)
-    # No filter: return most recent scoreboards regardless of batch_type
-    result = (
+    # No filter: pin to the single most-recent scored_at so we don't mix across triggers.
+    latest = (
         svc.client.table("sector_scoreboards")
-        .select("*")
+        .select("scored_at")
         .order("scored_at", desc=True)
-        .limit(12)
+        .limit(1)
         .execute()
     )
-    return result.data
+    if not latest.data:
+        return []
+    latest_ts = latest.data[0]["scored_at"]
+    rows = (
+        svc.client.table("sector_scoreboards")
+        .select("*")
+        .eq("scored_at", latest_ts)
+        .order("rank")
+        .execute()
+    ).data
+    seen: set[str] = set()
+    deduped: list[dict] = []
+    for row in rows:
+        sym = row.get("etf_symbol", "")
+        if sym and sym not in seen:
+            seen.add(sym)
+            deduped.append(row)
+    return deduped
 
 
 @router.get("/signals")
