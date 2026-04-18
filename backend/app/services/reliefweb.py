@@ -69,9 +69,13 @@ async def filter_crises_with_ai(headlines: list[dict], settings: Settings) -> li
 
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     try:
+        logger.info(
+            "Crisis AI prompt preview (model=%s, chars=%d): %s",
+            settings.claude_model_crisis, len(prompt), prompt[:600],
+        )
         response = client.messages.create(
             model=settings.claude_model_crisis,
-            max_tokens=1200,
+            max_tokens=2000,
             messages=[{"role": "user", "content": prompt}],
         )
         text = response.content[0].text.strip()

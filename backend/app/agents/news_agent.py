@@ -63,9 +63,14 @@ async def _analyze_news_with_ai(
     raw = ""
     summaries: list[dict] = []
     try:
+        # Log prompt so we can inspect what we're sending to Haiku.
+        logger.info(
+            "News AI prompt preview (model=%s, chars=%d): %s",
+            settings.claude_model_news, len(prompt), prompt[:600],
+        )
         response = client.messages.create(
             model=settings.claude_model_news,
-            max_tokens=1500,
+            max_tokens=3000,
             messages=[{"role": "user", "content": prompt}],
         )
         raw = response.content[0].text.strip()

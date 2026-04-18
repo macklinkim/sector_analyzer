@@ -446,7 +446,7 @@ async def analyst_agent_node(state: MarketAnalysisState, config: RunnableConfig)
 
     try:
         response = client.messages.create(
-            model=settings.claude_model_analyst, max_tokens=2500,
+            model=settings.claude_model_analyst, max_tokens=4096,
             messages=[{"role": "user", "content": prompt}],
         )
         raw = response.content[0].text.strip()
