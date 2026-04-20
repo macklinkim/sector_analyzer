@@ -1,0 +1,25 @@
+name: Cron Trigger (Pipeline)
+
+on:
+  schedule:
+    # ET는 EDT(UTC-4)/EST(UTC-5) 변동 — 아래는 EDT 기준. EST 기간엔 ET 1h 일찍 발동.
+    # 서버의 is_market_open_today() + idempotent /trigger/all 로 안전하게 중화됨.
+    - cron: '30 8 * * 1-5'   # ET 04:30 EDT  pre-market
+    - cron: '30 14 * * 1-5'  # ET 10:30 EDT  market-open
+    - cron: '0 21 * * 1-5'   # ET 17:00 EDT  post-market
+  workflow_dispatch: {}
+
+concurrency:
+  group: cron-trigger
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: POST /api/analysis/trigger/all
+        run: |
+          curl -sS -f --max-time 720 -X POST \
+            -H "X-API-Key: ${{ secrets.TRIGGER_API_KEY }}" \
+            "https://economy-analyzer-production.up.railway.app/api/analysis/trigger/all"
