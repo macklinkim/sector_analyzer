@@ -403,6 +403,81 @@ class SupabaseService:
         result = self._safe_execute(_q)
         return bool(result.data)
 
+    # --- Crypto: metadata / news / AI scores ---
+
+    def upsert_coin_metadata(self, rows: list[dict]) -> int:
+        if not rows:
+            return 0
+        self._safe_execute(
+            lambda: self.client.table("coin_metadata")
+            .upsert(rows, on_conflict="coin_id")
+            .execute()
+        )
+        return len(rows)
+
+    def get_coin_metadata(self) -> list[dict]:
+        def _q():
+            return (
+                self.client.table("coin_metadata")
+                .select("*")
+                .order("market_cap_rank")
+                .execute()
+            )
+        return self._safe_execute(_q).data
+
+    def upsert_coin_news(self, rows: list[dict]) -> int:
+        if not rows:
+            return 0
+        self._safe_execute(
+            lambda: self.client.table("coin_news")
+            .upsert(rows, on_conflict="url")
+            .execute()
+        )
+        return len(rows)
+
+    def get_latest_coin_news(self, limit: int = 30) -> list[dict]:
+        def _q():
+            return (
+                self.client.table("coin_news")
+                .select("*")
+                .order("published_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+        return self._safe_execute(_q).data
+
+    def insert_coin_ai_scores(self, rows: list[dict]) -> int:
+        if not rows:
+            return 0
+        self._safe_execute(
+            lambda: self.client.table("coin_ai_scores").insert(rows).execute()
+        )
+        return len(rows)
+
+    def get_latest_coin_ai_scores(self) -> list[dict]:
+        """Return the most recent score per coin (batch is one analyzed_at per run)."""
+        def _latest():
+            return (
+                self.client.table("coin_ai_scores")
+                .select("analyzed_at")
+                .order("analyzed_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+        latest = self._safe_execute(_latest)
+        if not latest.data:
+            return []
+        latest_ts = latest.data[0]["analyzed_at"]
+
+        def _q():
+            return (
+                self.client.table("coin_ai_scores")
+                .select("*")
+                .eq("analyzed_at", latest_ts)
+                .execute()
+            )
+        return self._safe_execute(_q).data
+
     def upload_avatar(self, name: str, data: bytes, content_type: str) -> str:
         """Upload avatar bytes to the ``user-avatars`` bucket and return its public URL.
 

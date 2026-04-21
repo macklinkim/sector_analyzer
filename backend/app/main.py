@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.analysis import router as analysis_router
 from app.api.routes.auth import router as auth_router
+from app.api.routes.crypto import router as crypto_router
 from app.api.routes.health import router as health_router
 from app.api.routes.market import router as market_router
 from app.api.routes.news import router as news_router
@@ -57,6 +58,7 @@ app.include_router(auth_router)
 app.include_router(market_router)
 app.include_router(news_router)
 app.include_router(analysis_router)
+app.include_router(crypto_router)
 
 
 @app.get("/")

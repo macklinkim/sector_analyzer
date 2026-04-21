@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AdminUsersModal } from "@/components/auth/AdminUsersModal";
 import { AvatarLightbox } from "@/components/auth/AvatarLightbox";
 import { LoginGate, LoginSplash, logout, useAuth } from "@/components/auth/LoginGate";
+import { CryptoTab } from "@/components/crypto/CryptoTab";
 import { GlobalMacroHeader } from "@/components/header/GlobalMacroHeader";
 import { AiTab } from "@/components/layout/AiTab";
 import { DashboardTabs } from "@/components/layout/DashboardTabs";
@@ -65,6 +66,7 @@ function Dashboard() {
             setSelectedSector={setSelectedSector}
           />
         )}
+        {activeTab === "crypto" && <CryptoTab />}
       </main>
 
       <LoginSplash />

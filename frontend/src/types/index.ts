@@ -180,7 +180,7 @@ export const REGIME_LABELS: Record<RegimeType, string> = {
 
 // === Dashboard layout types (2026-04-11) ===
 
-export type DashboardTab = 'market' | 'ai';
+export type DashboardTab = 'market' | 'ai' | 'crypto';
 
 /**
  * Shape returned by useMarketData(). Layout components import this
@@ -223,4 +223,36 @@ export interface AllowedUser {
   photo_url: string | null;
   added_by: string | null;
   added_at: string | null;
+}
+
+// --- Crypto Types ---
+
+export interface CoinMetadata {
+  coin_id: string;
+  symbol: string;
+  name: string;
+  market_cap: number | null;
+  market_cap_rank: number | null;
+  image_url: string | null;
+  is_ai: boolean;
+  collected_at: string;
+}
+
+export interface CoinNews {
+  url: string;
+  title: string;
+  source: string | null;
+  published_at: string;
+  sentiment: "positive" | "negative" | "neutral" | null;
+  related_coins: string[] | null;
+  collected_at: string;
+}
+
+export interface CoinAiScore {
+  id: string;
+  coin_id: string;
+  ai_score: number;
+  recommendation: "overweight" | "neutral" | "underweight";
+  reasoning: string | null;
+  analyzed_at: string;
 }

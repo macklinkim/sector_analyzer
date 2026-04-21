@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     # Comma-separated names with admin privileges (user management modal)
     admin_users: str = "mack,macklin"
 
+    # Crypto data sources
+    cryptopanic_api_key: str = ""
+
     # Playwright
     playwright_timeout_sec: int = 30
     playwright_max_instances: int = 2

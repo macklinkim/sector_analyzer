@@ -18,6 +18,7 @@ interface TabDef {
 const TABS: TabDef[] = [
   { id: "market", label: "시장 현황" },
   { id: "ai", label: "AI 인사이트" },
+  { id: "crypto", label: "암호화폐" },
 ];
 
 export function DashboardTabs({

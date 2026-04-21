@@ -1,6 +1,9 @@
 import { getAuthToken } from "@/lib/supabase";
 import type {
   AllowedUser,
+  CoinAiScore,
+  CoinMetadata,
+  CoinNews,
   EconomicIndicator,
   GlobalCrisis,
   MacroRegime,
@@ -100,6 +103,10 @@ export const api = {
       throw new Error(err.detail ?? `삭제 실패 (${resp.status})`);
     }
   },
+
+  getCoinMetadata: () => fetchJson<CoinMetadata[]>("/crypto/metadata"),
+  getCoinNews: (limit = 30) => fetchJson<CoinNews[]>(`/crypto/news?limit=${limit}`),
+  getCoinAiScores: () => fetchJson<CoinAiScore[]>("/crypto/scores"),
 
   uploadAvatar: async (name: string, file: File): Promise<AllowedUser> => {
     const form = new FormData();
