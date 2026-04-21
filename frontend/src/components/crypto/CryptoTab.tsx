@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { MarketMomentum } from "@/components/crypto/MarketMomentum";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -90,6 +91,8 @@ export function CryptoTab() {
         sector={sector}
         onSectorChange={setSector}
       />
+
+      <MarketMomentum coins={coins} tickers={tickers} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <AiScoreTable scores={scores} coins={coins} loading={loading} />
