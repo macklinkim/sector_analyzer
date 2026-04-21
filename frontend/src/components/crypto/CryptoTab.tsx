@@ -161,19 +161,34 @@ function CoinTable({
 }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-sm">코인 목록</CardTitle>
-        <select
-          value={sector}
-          onChange={(e) => onSectorChange(e.target.value as SectorFilter)}
-          className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-bullish/50"
+      <CardHeader className="flex flex-wrap items-center gap-x-3 gap-y-2 pb-2">
+        <CardTitle className="text-sm shrink-0">코인 목록</CardTitle>
+        <div
+          role="tablist"
+          aria-label="섹터 필터"
+          className="flex flex-wrap gap-1 rounded-lg bg-muted/60 p-0.5"
         >
-          {SECTOR_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          {SECTOR_OPTIONS.map((opt) => {
+            const active = opt.value === sector;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => onSectorChange(opt.value)}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors sm:text-xs",
+                  active
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         {loading && coins.length === 0 ? (
