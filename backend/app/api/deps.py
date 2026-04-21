@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 
 import jwt
 from fastapi import Depends, Header, HTTPException, status
+from jwt import PyJWKClient
 from pydantic import BaseModel
 
 from app.config import Settings
@@ -20,6 +21,12 @@ def get_supabase() -> SupabaseService:
     return SupabaseService(settings)
 
 
+@lru_cache
+def _get_jwks_client(jwks_url: str) -> PyJWKClient:
+    """Cache one JWKS client per URL. Keys are fetched and cached on first use."""
+    return PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
+
+
 class CurrentUser(BaseModel):
     """Authenticated identity. Either a legacy name user or a Supabase email user."""
 
@@ -34,20 +41,44 @@ def _is_admin_name(name: str, settings: Settings) -> bool:
     return name.strip().lower() in admins
 
 
-def _decode_supabase_jwt(token: str, secret: str) -> dict:
+# Supabase GoTrue accepts both the new asymmetric signing keys (ES256 via JWKS)
+# and the legacy shared HS256 secret. Try JWKS first, fall back to the legacy
+# secret if present — this lets the deployment roll forward without coupling to
+# either scheme exclusively.
+_SUPABASE_JWT_ALGORITHMS = ["ES256", "RS256", "HS256"]
+
+
+def _decode_supabase_jwt(token: str, settings: Settings) -> dict | None:
+    # JWKS path: works for new asymmetric signing keys. No env secret needed.
+    jwks_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
     try:
+        jwks_client = _get_jwks_client(jwks_url)
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
         return jwt.decode(
             token,
-            secret,
-            algorithms=["HS256"],
+            signing_key.key,
+            algorithms=_SUPABASE_JWT_ALGORITHMS,
             audience="authenticated",
             options={"require": ["exp", "sub"]},
         )
-    except jwt.PyJWTError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid Supabase token: {e}",
-        )
+    except jwt.PyJWTError:
+        pass
+    except Exception:
+        # Network errors on JWKS fetch, malformed JWKS, etc. — fall through to legacy.
+        pass
+
+    if settings.supabase_jwt_secret:
+        try:
+            return jwt.decode(
+                token,
+                settings.supabase_jwt_secret,
+                algorithms=["HS256"],
+                audience="authenticated",
+                options={"require": ["exp", "sub"]},
+            )
+        except jwt.PyJWTError:
+            return None
+    return None
 
 
 def get_current_user(
@@ -58,7 +89,8 @@ def get_current_user(
     """Resolve the caller from either a Supabase JWT or a legacy session token.
 
     Header format: ``Authorization: Bearer <token>``.
-    - Supabase JWT: verified with ``SUPABASE_JWT_SECRET``; email must appear in ``allowed_emails``.
+    - Supabase JWT: verified against the project's JWKS (ES256) with a legacy
+      ``SUPABASE_JWT_SECRET`` fallback. Email must appear in ``allowed_emails``.
     - Legacy token: looked up in the in-memory session store from ``auth.py``.
     """
     if not authorization or not authorization.lower().startswith("bearer "):
@@ -73,12 +105,9 @@ def get_current_user(
             detail="Empty bearer token",
         )
 
-    # Try Supabase JWT first (looks like three dot-separated base64 segments)
-    if settings.supabase_jwt_secret and token.count(".") == 2:
-        try:
-            payload = _decode_supabase_jwt(token, settings.supabase_jwt_secret)
-        except HTTPException:
-            payload = None
+    # Supabase JWT first (three dot-separated base64 segments)
+    if token.count(".") == 2:
+        payload = _decode_supabase_jwt(token, settings)
         if payload is not None:
             email = (payload.get("email") or "").lower()
             if not email:
