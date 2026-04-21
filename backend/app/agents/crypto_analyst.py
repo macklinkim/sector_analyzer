@@ -92,7 +92,7 @@ def analyze_crypto_scores(
 
     resp = client.messages.create(
         model=settings.claude_model_analyst,
-        max_tokens=2000,
+        max_tokens=4000,  # 25 coins × ~150 tokens reasoning needs headroom; 2000 truncated
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_prompt}],
     )
