@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AdminUsersModal } from "@/components/auth/AdminUsersModal";
+import { AvatarLightbox } from "@/components/auth/AvatarLightbox";
 import { LoginGate, LoginSplash, logout, useAuth } from "@/components/auth/LoginGate";
 import { GlobalMacroHeader } from "@/components/header/GlobalMacroHeader";
 import { AiTab } from "@/components/layout/AiTab";
@@ -14,6 +15,7 @@ import type { DashboardTab } from "@/types";
 function Dashboard() {
   const { identity, isAdmin, photoUrl, refresh } = useAuth();
   const [adminOpen, setAdminOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const marketData = useMarketData();
   const newsData = useNewsData();
   const analysisData = useAnalysisData();
@@ -41,8 +43,8 @@ function Dashboard() {
           onChange={setActiveTab}
           identity={identity}
           photoUrl={photoUrl}
-          onAvatarClick={isAdmin ? () => setAdminOpen(true) : undefined}
-          avatarTitle={isAdmin ? `${identity} — 사용자 관리` : (identity ?? undefined)}
+          onAvatarClick={identity ? () => setLightboxOpen(true) : undefined}
+          avatarTitle={identity ?? undefined}
         />
       </div>
 
@@ -66,6 +68,14 @@ function Dashboard() {
       </main>
 
       <LoginSplash />
+      <AvatarLightbox
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        identity={identity ?? ""}
+        photoUrl={photoUrl}
+        isAdmin={isAdmin}
+        onOpenAdmin={() => setAdminOpen(true)}
+      />
       {isAdmin && (
         <AdminUsersModal
           open={adminOpen}
