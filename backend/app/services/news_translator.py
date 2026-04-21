@@ -42,7 +42,7 @@ def translate_headlines(
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         resp = client.messages.create(
             model=settings.claude_model_news,
-            max_tokens=2000,
+            max_tokens=4000,  # 40 headlines × Korean summary ~50 tokens + JSON overhead
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_prompt}],
         )
