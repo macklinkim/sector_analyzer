@@ -37,8 +37,10 @@ class Settings(BaseSettings):
     # CORS: comma-separated allowed origins (added to defaults)
     cors_origins: str = ""
 
-    # Simple auth: comma-separated allowed names
+    # Simple auth: comma-separated allowed names (seed fallback — DB `allowed_users` is authoritative)
     allowed_users: str = "admin"
+    # Comma-separated names with admin privileges (user management modal)
+    admin_users: str = "mack,macklin"
 
     # Playwright
     playwright_timeout_sec: int = 30

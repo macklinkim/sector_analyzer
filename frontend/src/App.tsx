@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { LoginGate, logout, useAuth } from "@/components/auth/LoginGate";
+import { AdminUsersModal } from "@/components/auth/AdminUsersModal";
+import { LoginGate, LoginSplash, logout, useAuth } from "@/components/auth/LoginGate";
 import { GlobalMacroHeader } from "@/components/header/GlobalMacroHeader";
 import { AiTab } from "@/components/layout/AiTab";
 import { DashboardTabs } from "@/components/layout/DashboardTabs";
@@ -11,7 +12,8 @@ import { useStickyState } from "@/hooks/useStickyState";
 import type { DashboardTab } from "@/types";
 
 function Dashboard() {
-  const { identity } = useAuth();
+  const { identity, isAdmin, photoUrl, refresh } = useAuth();
+  const [adminOpen, setAdminOpen] = useState(false);
   const marketData = useMarketData();
   const newsData = useNewsData();
   const analysisData = useAnalysisData();
@@ -34,7 +36,14 @@ function Dashboard() {
             lastUpdated={marketData.lastUpdated}
           />
         </header>
-        <DashboardTabs activeTab={activeTab} onChange={setActiveTab} />
+        <DashboardTabs
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          identity={identity}
+          photoUrl={photoUrl}
+          onAvatarClick={isAdmin ? () => setAdminOpen(true) : undefined}
+          avatarTitle={isAdmin ? `${identity} — 사용자 관리` : (identity ?? undefined)}
+        />
       </div>
 
       <main>
@@ -55,6 +64,18 @@ function Dashboard() {
           />
         )}
       </main>
+
+      <LoginSplash />
+      {isAdmin && (
+        <AdminUsersModal
+          open={adminOpen}
+          onClose={() => {
+            setAdminOpen(false);
+            void refresh();
+          }}
+          currentIdentity={identity ?? ""}
+        />
+      )}
 
       <footer className="border-t border-border px-4 py-3">
         <div className="flex items-center justify-between">

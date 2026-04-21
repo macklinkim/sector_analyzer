@@ -215,3 +215,12 @@ export interface AnalysisDataState {
   error: string | null;
   refresh: () => void;
 }
+
+// --- Auth Types ---
+
+export interface AllowedUser {
+  name: string;
+  photo_url: string | null;
+  added_by: string | null;
+  added_at: string | null;
+}

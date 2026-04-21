@@ -331,3 +331,96 @@ class SupabaseService:
             )
         result = self._safe_execute(_q)
         return bool(result.data)
+
+    # --- Auth: allowed_users (dynamic name whitelist) ---
+
+    def list_allowed_users(self) -> list[dict]:
+        def _q():
+            return (
+                self.client.table("allowed_users")
+                .select("name,photo_url,added_by,added_at")
+                .order("added_at", desc=False)
+                .execute()
+            )
+        return self._safe_execute(_q).data
+
+    def get_allowed_user(self, name: str) -> dict | None:
+        normalized = name.strip().lower()
+        if not normalized:
+            return None
+
+        def _q():
+            return (
+                self.client.table("allowed_users")
+                .select("name,photo_url,added_by,added_at")
+                .eq("name", normalized)
+                .limit(1)
+                .execute()
+            )
+        result = self._safe_execute(_q)
+        return result.data[0] if result.data else None
+
+    def is_name_allowed(self, name: str) -> bool:
+        return self.get_allowed_user(name) is not None
+
+    def upsert_allowed_user(self, name: str, added_by: str, photo_url: str | None = None) -> dict:
+        normalized = name.strip().lower()
+        payload: dict = {"name": normalized, "added_by": added_by}
+        if photo_url is not None:
+            payload["photo_url"] = photo_url
+
+        def _q():
+            return (
+                self.client.table("allowed_users")
+                .upsert(payload, on_conflict="name")
+                .execute()
+            )
+        return self._safe_execute(_q).data[0]
+
+    def update_allowed_user_photo(self, name: str, photo_url: str) -> dict | None:
+        normalized = name.strip().lower()
+
+        def _q():
+            return (
+                self.client.table("allowed_users")
+                .update({"photo_url": photo_url})
+                .eq("name", normalized)
+                .execute()
+            )
+        result = self._safe_execute(_q)
+        return result.data[0] if result.data else None
+
+    def delete_allowed_user(self, name: str) -> bool:
+        normalized = name.strip().lower()
+
+        def _q():
+            return (
+                self.client.table("allowed_users")
+                .delete()
+                .eq("name", normalized)
+                .execute()
+            )
+        result = self._safe_execute(_q)
+        return bool(result.data)
+
+    def upload_avatar(self, name: str, data: bytes, content_type: str) -> str:
+        """Upload avatar bytes to the ``user-avatars`` bucket and return its public URL.
+
+        Uses the user's lowercase name as the object key so re-uploads overwrite cleanly.
+        """
+        normalized = name.strip().lower()
+        ext = {"image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png", "image/webp": "webp"}.get(
+            content_type.lower(), "jpg"
+        )
+        path = f"{normalized}.{ext}"
+        bucket = self.client.storage.from_("user-avatars")
+
+        def _upload():
+            # upsert=true so repeated uploads replace the previous file under the same key
+            return bucket.upload(
+                path,
+                data,
+                file_options={"content-type": content_type, "upsert": "true"},
+            )
+        self._safe_execute(_upload)
+        return bucket.get_public_url(path)

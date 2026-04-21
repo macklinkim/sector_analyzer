@@ -18,11 +18,20 @@ interface LoginGateProps {
 interface AuthState {
   identity: string;
   source: "legacy" | "supabase";
+  isAdmin: boolean;
+  photoUrl: string | null;
 }
 
 const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
-async function legacyLogin(name: string): Promise<{ token: string; name: string }> {
+interface LegacyLoginResult {
+  token: string;
+  name: string;
+  is_admin: boolean;
+  photo_url: string | null;
+}
+
+async function legacyLogin(name: string): Promise<LegacyLoginResult> {
   let resp: Response;
   try {
     resp = await fetch(`${BASE_URL}/auth/login`, {
@@ -40,6 +49,55 @@ async function legacyLogin(name: string): Promise<{ token: string; name: string 
   return resp.json();
 }
 
+export const SPLASH_KEY = "economi_login_splash";
+const MOBILE_BREAKPOINT = 1024; // Tailwind lg
+
+function markLoginSplash(photoUrl: string | null): void {
+  if (!photoUrl) return;
+  sessionStorage.setItem(SPLASH_KEY, photoUrl);
+}
+
+/**
+ * Renders a full-screen photo overlay for 2s after a successful mobile login.
+ * The splash consumes the ``economi_login_splash`` sessionStorage flag so it
+ * fires exactly once per login event.
+ */
+export function LoginSplash() {
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [fadingOut, setFadingOut] = useState(false);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem(SPLASH_KEY);
+    sessionStorage.removeItem(SPLASH_KEY);
+    if (!stored) return;
+    if (typeof window !== "undefined" && window.innerWidth >= MOBILE_BREAKPOINT) return;
+
+    setPhoto(stored);
+    const fadeTimer = window.setTimeout(() => setFadingOut(true), 1600);
+    const clearTimer = window.setTimeout(() => setPhoto(null), 2000);
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, []);
+
+  if (!photo) return null;
+
+  return (
+    <div
+      className={`fixed inset-0 z-[60] flex items-center justify-center bg-black transition-opacity duration-500 ${
+        fadingOut ? "opacity-0" : "opacity-100"
+      }`}
+    >
+      <img
+        src={photo}
+        alt=""
+        className="max-h-full max-w-full object-contain"
+      />
+    </div>
+  );
+}
+
 async function verifyLegacyToken(token: string): Promise<boolean> {
   try {
     const resp = await fetch(`${BASE_URL}/auth/verify?token=${token}`);
@@ -49,29 +107,77 @@ async function verifyLegacyToken(token: string): Promise<boolean> {
   }
 }
 
-export function useAuth(): { identity: string | null; isLoggedIn: boolean } {
+export function useAuth(): {
+  identity: string | null;
+  isLoggedIn: boolean;
+  isAdmin: boolean;
+  photoUrl: string | null;
+  source: "legacy" | "supabase" | null;
+  refresh: () => Promise<void>;
+} {
   const [state, setState] = useState<AuthState | null>(null);
 
-  useEffect(() => {
-    // Legacy session
-    const legacyName = getLegacyName();
-    if (legacyName) setState({ identity: legacyName, source: "legacy" });
+  const hydrateFromServer = async (
+    fallback: { identity: string; source: "legacy" | "supabase" },
+  ): Promise<void> => {
+    try {
+      const me = await api.getMe();
+      setState({
+        identity: me.identity,
+        source: me.source,
+        isAdmin: me.is_admin,
+        photoUrl: me.photo_url,
+      });
+    } catch {
+      // /auth/me unreachable — fall back to local session info with no admin rights.
+      setState({ ...fallback, isAdmin: false, photoUrl: null });
+    }
+  };
 
-    // Supabase session (overrides if present)
+  useEffect(() => {
+    const legacyName = getLegacyName();
+    if (legacyName) {
+      void hydrateFromServer({ identity: legacyName, source: "legacy" });
+    }
+
     if (supabase) {
       supabase.auth.getSession().then(({ data }) => {
         const email = data.session?.user?.email;
-        if (email) setState({ identity: email, source: "supabase" });
+        if (email) void hydrateFromServer({ identity: email, source: "supabase" });
       });
       const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
         const email = session?.user?.email;
-        setState(email ? { identity: email, source: "supabase" } : null);
+        if (email) {
+          void hydrateFromServer({ identity: email, source: "supabase" });
+        } else if (!getLegacyName()) {
+          setState(null);
+        }
       });
       return () => sub.subscription.unsubscribe();
     }
   }, []);
 
-  return { identity: state?.identity ?? null, isLoggedIn: state !== null };
+  const refresh = async (): Promise<void> => {
+    const legacyName = getLegacyName();
+    if (legacyName) {
+      await hydrateFromServer({ identity: legacyName, source: "legacy" });
+      return;
+    }
+    if (supabase) {
+      const { data } = await supabase.auth.getSession();
+      const email = data.session?.user?.email;
+      if (email) await hydrateFromServer({ identity: email, source: "supabase" });
+    }
+  };
+
+  return {
+    identity: state?.identity ?? null,
+    isLoggedIn: state !== null,
+    isAdmin: state?.isAdmin ?? false,
+    photoUrl: state?.photoUrl ?? null,
+    source: state?.source ?? null,
+    refresh,
+  };
 }
 
 export async function logout(): Promise<void> {
@@ -149,6 +255,7 @@ export function LoginGate({ children }: LoginGateProps) {
     try {
       const result = await legacyLogin(name.trim());
       setLegacySession(result.token, result.name);
+      markLoginSplash(result.photo_url);
       setAuthenticated(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "로그인 실패");

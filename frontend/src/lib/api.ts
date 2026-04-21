@@ -1,5 +1,6 @@
 import { getAuthToken } from "@/lib/supabase";
 import type {
+  AllowedUser,
   EconomicIndicator,
   GlobalCrisis,
   MacroRegime,
@@ -68,4 +69,52 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     }),
+
+  getMe: () =>
+    fetchJson<{
+      identity: string;
+      source: "legacy" | "supabase";
+      is_admin: boolean;
+      photo_url: string | null;
+    }>("/auth/me"),
+
+  listAllowedUsers: () => fetchJson<AllowedUser[]>("/auth/allowed-users"),
+
+  addAllowedUser: (name: string) =>
+    fetchJson<AllowedUser>("/auth/allowed-users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    }),
+
+  deleteAllowedUser: async (name: string): Promise<void> => {
+    const headers = new Headers();
+    const token = await getAuthToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const resp = await fetch(
+      `${BASE_URL}/auth/allowed-users/${encodeURIComponent(name)}`,
+      { method: "DELETE", headers },
+    );
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail ?? `삭제 실패 (${resp.status})`);
+    }
+  },
+
+  uploadAvatar: async (name: string, file: File): Promise<AllowedUser> => {
+    const form = new FormData();
+    form.append("file", file);
+    const headers = new Headers();
+    const token = await getAuthToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const resp = await fetch(
+      `${BASE_URL}/auth/allowed-users/${encodeURIComponent(name)}/avatar`,
+      { method: "POST", headers, body: form },
+    );
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail ?? `업로드 실패 (${resp.status})`);
+    }
+    return resp.json();
+  },
 };

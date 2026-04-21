@@ -25,6 +25,13 @@ class CurrentUser(BaseModel):
 
     identity: str  # name (legacy) or email (supabase)
     source: Literal["legacy", "supabase"]
+    is_admin: bool = False
+    photo_url: str | None = None
+
+
+def _is_admin_name(name: str, settings: Settings) -> bool:
+    admins = {n.strip().lower() for n in settings.admin_users.split(",") if n.strip()}
+    return name.strip().lower() in admins
 
 
 def _decode_supabase_jwt(token: str, secret: str) -> dict:
@@ -91,9 +98,27 @@ def get_current_user(
 
     name = _sessions.get(token)
     if name:
-        return CurrentUser(identity=name, source="legacy")
+        user_row = supabase.get_allowed_user(name)
+        return CurrentUser(
+            identity=name,
+            source="legacy",
+            is_admin=_is_admin_name(name, settings),
+            photo_url=user_row.get("photo_url") if user_row else None,
+        )
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="유효하지 않은 세션입니다",
     )
+
+
+def require_admin(
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> CurrentUser:
+    """Gate an endpoint to admin users only (legacy admin names)."""
+    if not user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="관리자 권한이 필요합니다",
+        )
+    return user
