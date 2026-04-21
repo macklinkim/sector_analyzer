@@ -12,27 +12,39 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# Hand-curated target universe. 'is_ai' flags are authoritative — CoinGecko
-# categories are only used as a cross-check for new additions.
+# Hand-curated target universe grouped by category. The category column drives
+# the frontend sector filter; is_ai is kept as a derived convenience (category == 'ai').
 TRACKED_COINS: list[dict[str, Any]] = [
     # Large caps
-    {"coin_id": "bitcoin", "symbol": "btc", "is_ai": False},
-    {"coin_id": "ethereum", "symbol": "eth", "is_ai": False},
-    {"coin_id": "solana", "symbol": "sol", "is_ai": False},
-    {"coin_id": "binancecoin", "symbol": "bnb", "is_ai": False},
-    {"coin_id": "ripple", "symbol": "xrp", "is_ai": False},
-    {"coin_id": "cardano", "symbol": "ada", "is_ai": False},
-    {"coin_id": "dogecoin", "symbol": "doge", "is_ai": False},
-    {"coin_id": "avalanche-2", "symbol": "avax", "is_ai": False},
-    {"coin_id": "chainlink", "symbol": "link", "is_ai": False},
-    {"coin_id": "polkadot", "symbol": "dot", "is_ai": False},
-    {"coin_id": "sui", "symbol": "sui", "is_ai": False},
-    {"coin_id": "ondo-finance", "symbol": "ondo", "is_ai": False},
+    {"coin_id": "bitcoin", "symbol": "btc", "category": "major"},
+    {"coin_id": "ethereum", "symbol": "eth", "category": "major"},
+    {"coin_id": "solana", "symbol": "sol", "category": "major"},
+    {"coin_id": "binancecoin", "symbol": "bnb", "category": "major"},
+    {"coin_id": "ripple", "symbol": "xrp", "category": "major"},
+    {"coin_id": "cardano", "symbol": "ada", "category": "major"},
+    {"coin_id": "dogecoin", "symbol": "doge", "category": "major"},
+    {"coin_id": "avalanche-2", "symbol": "avax", "category": "major"},
+    {"coin_id": "chainlink", "symbol": "link", "category": "major"},
+    {"coin_id": "polkadot", "symbol": "dot", "category": "major"},
+    {"coin_id": "sui", "symbol": "sui", "category": "major"},
+    {"coin_id": "ondo-finance", "symbol": "ondo", "category": "major"},
     # AI sector
-    {"coin_id": "near", "symbol": "near", "is_ai": True},
-    {"coin_id": "render-token", "symbol": "render", "is_ai": True},
-    {"coin_id": "fetch-ai", "symbol": "fet", "is_ai": True},
-    {"coin_id": "bittensor", "symbol": "tao", "is_ai": True},
+    {"coin_id": "near", "symbol": "near", "category": "ai"},
+    {"coin_id": "render-token", "symbol": "render", "category": "ai"},
+    {"coin_id": "fetch-ai", "symbol": "fet", "category": "ai"},
+    {"coin_id": "bittensor", "symbol": "tao", "category": "ai"},
+    # DeFi
+    {"coin_id": "uniswap", "symbol": "uni", "category": "defi"},
+    {"coin_id": "aave", "symbol": "aave", "category": "defi"},
+    {"coin_id": "maker", "symbol": "mkr", "category": "defi"},
+    # L2 Scaling
+    {"coin_id": "arbitrum", "symbol": "arb", "category": "l2"},
+    {"coin_id": "optimism", "symbol": "op", "category": "l2"},
+    {"coin_id": "matic-network", "symbol": "pol", "category": "l2"},
+    # Meme
+    {"coin_id": "dogwifcoin", "symbol": "wif", "category": "meme"},
+    {"coin_id": "pepe", "symbol": "pepe", "category": "meme"},
+    {"coin_id": "bonk", "symbol": "bonk", "category": "meme"},
 ]
 
 BASE_URL = "https://api.coingecko.com/api/v3"
@@ -45,7 +57,7 @@ async def fetch_coin_metadata() -> list[dict[str, Any]]:
     regardless of how many coin IDs we pass.
     """
     ids = ",".join(c["coin_id"] for c in TRACKED_COINS)
-    flags = {c["coin_id"]: c["is_ai"] for c in TRACKED_COINS}
+    categories = {c["coin_id"]: c["category"] for c in TRACKED_COINS}
 
     params = {
         "vs_currency": "usd",
@@ -65,8 +77,9 @@ async def fetch_coin_metadata() -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for row in rows:
         coin_id = row.get("id")
-        if coin_id not in flags:
+        if coin_id not in categories:
             continue
+        category = categories[coin_id]
         out.append(
             {
                 "coin_id": coin_id,
@@ -75,12 +88,13 @@ async def fetch_coin_metadata() -> list[dict[str, Any]]:
                 "market_cap": row.get("market_cap"),
                 "market_cap_rank": row.get("market_cap_rank"),
                 "image_url": row.get("image"),
-                "is_ai": flags[coin_id],
+                "is_ai": category == "ai",
+                "category": category,
             }
         )
 
     if len(out) < len(TRACKED_COINS):
-        missing = set(flags) - {r["coin_id"] for r in out}
+        missing = set(categories) - {r["coin_id"] for r in out}
         logger.warning("CoinGecko returned fewer coins than requested (missing: %s)", missing)
 
     return out

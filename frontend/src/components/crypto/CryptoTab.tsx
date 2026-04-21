@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,13 +6,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCryptoData } from "@/hooks/useCryptoData";
 import { useCryptoTicker, type CryptoTicker } from "@/hooks/useCryptoTicker";
 import { cn } from "@/lib/utils";
-import type { CoinAiScore, CoinMetadata, CoinNews } from "@/types";
+import type { CoinAiScore, CoinCategory, CoinMetadata, CoinNews } from "@/types";
+
+type SectorFilter = "all" | CoinCategory;
+
+const SECTOR_OPTIONS: { value: SectorFilter; label: string }[] = [
+  { value: "all", label: "전체" },
+  { value: "major", label: "대형" },
+  { value: "ai", label: "AI" },
+  { value: "defi", label: "DeFi" },
+  { value: "l2", label: "L2" },
+  { value: "meme", label: "Meme" },
+];
 
 function formatPrice(price: number | undefined): string {
   if (price === undefined || !Number.isFinite(price)) return "-";
   if (price >= 1000) return price.toLocaleString("en-US", { maximumFractionDigits: 0 });
   if (price >= 1) return price.toFixed(2);
-  return price.toFixed(4);
+  if (price >= 0.01) return price.toFixed(4);
+  return price.toFixed(8);
 }
 
 function formatVolume(vol: number | undefined): string {
@@ -42,14 +54,25 @@ function recLabel(rec: string): string {
   return "중립";
 }
 
+function categoryLabel(cat: CoinCategory): string {
+  const map: Record<CoinCategory, string> = {
+    major: "대형",
+    ai: "AI",
+    defi: "DeFi",
+    l2: "L2",
+    meme: "Meme",
+  };
+  return map[cat];
+}
+
 export function CryptoTab() {
   const { coins, news, scores, loading } = useCryptoData();
+  const [sector, setSector] = useState<SectorFilter>("all");
 
   const symbols = useMemo(() => coins.map((c) => c.symbol), [coins]);
   const tickers = useCryptoTicker(symbols);
 
-  const majorCoins = coins.filter((c) => !c.is_ai);
-  const aiCoins = coins.filter((c) => c.is_ai);
+  const filtered = sector === "all" ? coins : coins.filter((c) => c.category === sector);
 
   return (
     <div
@@ -60,10 +83,13 @@ export function CryptoTab() {
     >
       <BtcEthStrip coins={coins} tickers={tickers} loading={loading} />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <CoinTable title="대형" coins={majorCoins} tickers={tickers} loading={loading} />
-        <CoinTable title="AI 섹터" coins={aiCoins} tickers={tickers} loading={loading} />
-      </div>
+      <CoinTable
+        coins={filtered}
+        tickers={tickers}
+        loading={loading}
+        sector={sector}
+        onSectorChange={setSector}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <AiScoreTable scores={scores} coins={coins} loading={loading} />
@@ -83,9 +109,8 @@ function BtcEthStrip({
   loading: boolean;
 }) {
   const featured = coins.filter((c) => ["btc", "eth"].includes(c.symbol));
-  if (loading && featured.length === 0) {
-    return <Skeleton className="h-16 w-full" />;
-  }
+  if (loading && featured.length === 0) return <Skeleton className="h-16 w-full" />;
+
   return (
     <div className="grid grid-cols-2 gap-3">
       {featured.map((c) => {
@@ -122,20 +147,33 @@ function BtcEthStrip({
 }
 
 function CoinTable({
-  title,
   coins,
   tickers,
   loading,
+  sector,
+  onSectorChange,
 }: {
-  title: string;
   coins: CoinMetadata[];
   tickers: Record<string, CryptoTicker>;
   loading: boolean;
+  sector: SectorFilter;
+  onSectorChange: (s: SectorFilter) => void;
 }) {
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm">{title}</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+        <CardTitle className="text-sm">코인 목록</CardTitle>
+        <select
+          value={sector}
+          onChange={(e) => onSectorChange(e.target.value as SectorFilter)}
+          className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-bullish/50"
+        >
+          {SECTOR_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         {loading && coins.length === 0 ? (
@@ -147,6 +185,7 @@ function CoinTable({
             <thead>
               <tr className="border-b border-border text-xs text-muted-foreground">
                 <th className="px-2 py-2 text-left">코인</th>
+                <th className="px-2 py-2 text-left">섹터</th>
                 <th className="px-2 py-2 text-right">가격 (USDT)</th>
                 <th className="px-2 py-2 text-right">24h</th>
                 <th className="px-2 py-2 text-right">거래량</th>
@@ -170,6 +209,9 @@ function CoinTable({
                           {c.symbol.toUpperCase()}
                         </span>
                       </div>
+                    </td>
+                    <td className="px-2 py-2 text-xs text-muted-foreground">
+                      {categoryLabel(c.category)}
                     </td>
                     <td className="px-2 py-2 text-right font-mono tabular-nums">
                       ${formatPrice(t?.price)}
@@ -292,36 +334,32 @@ function CryptoNewsFeed({ news, loading }: { news: CoinNews[]; loading: boolean 
           <p className="py-4 text-center text-xs text-muted-foreground">뉴스 없음</p>
         ) : (
           <ul className="space-y-2">
-            {news.slice(0, 15).map((n) => {
-              const sentimentColor =
-                n.sentiment === "positive"
-                  ? "text-bullish"
-                  : n.sentiment === "negative"
-                    ? "text-bearish"
-                    : "text-muted-foreground";
-              return (
-                <li key={n.url} className="border-b border-border/30 pb-2 last:border-b-0">
-                  <a
-                    href={n.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-sm text-foreground hover:underline"
-                  >
-                    {n.title}
-                  </a>
-                  <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-                    <span>{n.source ?? "—"}</span>
-                    <span>{new Date(n.published_at).toLocaleString("ko-KR")}</span>
-                    <span className={sentimentColor}>{n.sentiment ?? "neutral"}</span>
-                    {n.related_coins && n.related_coins.length > 0 && (
-                      <span className="truncate font-mono">
-                        {n.related_coins.map((c) => c.toUpperCase()).join(" · ")}
-                      </span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
+            {news.slice(0, 15).map((n) => (
+              <li key={n.url} className="border-b border-border/30 pb-2 last:border-b-0">
+                <a
+                  href={n.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-sm text-foreground hover:underline"
+                >
+                  {n.title}
+                </a>
+                {n.title_ko && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {n.title_ko}
+                  </p>
+                )}
+                <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <span>{n.source ?? "—"}</span>
+                  <span>{new Date(n.published_at).toLocaleString("ko-KR")}</span>
+                  {n.related_coins && n.related_coins.length > 0 && (
+                    <span className="truncate font-mono">
+                      {n.related_coins.map((c) => c.toUpperCase()).join(" · ")}
+                    </span>
+                  )}
+                </div>
+              </li>
+            ))}
           </ul>
         )}
       </CardContent>

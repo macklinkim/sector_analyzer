@@ -28,13 +28,23 @@ SYSTEM_PROMPT = """당신은 암호화폐 시황 애널리스트입니다. 각 �
 본 분석은 AI의 추론이며 실제 투자 판단의 근거로 사용될 수 없음."""
 
 
+_CATEGORY_LABELS: dict[str, str] = {
+    "major": "대형",
+    "ai": "AI",
+    "defi": "DeFi",
+    "l2": "L2",
+    "meme": "Meme",
+}
+
+
 def _build_user_prompt(coins: list[dict[str, Any]], news: list[dict[str, Any]]) -> str:
     coin_lines: list[str] = []
     for c in coins:
-        tag = "[AI]" if c.get("is_ai") else "[대형]"
+        category = c.get("category") or ("ai" if c.get("is_ai") else "major")
+        label = _CATEGORY_LABELS.get(category, category)
         rank = c.get("market_cap_rank") or "?"
         coin_lines.append(
-            f"- {tag} {c['coin_id']} ({c['symbol'].upper()}) — {c['name']}, 시총순위 {rank}"
+            f"- [{label}] {c['coin_id']} ({c['symbol'].upper()}) — {c['name']}, 시총순위 {rank}"
         )
 
     # Group recent news by coin symbol for compact context.

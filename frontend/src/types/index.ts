@@ -227,6 +227,8 @@ export interface AllowedUser {
 
 // --- Crypto Types ---
 
+export type CoinCategory = "major" | "ai" | "defi" | "l2" | "meme";
+
 export interface CoinMetadata {
   coin_id: string;
   symbol: string;
@@ -235,12 +237,14 @@ export interface CoinMetadata {
   market_cap_rank: number | null;
   image_url: string | null;
   is_ai: boolean;
+  category: CoinCategory;
   collected_at: string;
 }
 
 export interface CoinNews {
   url: string;
   title: string;
+  title_ko: string | null;
   source: string | null;
   published_at: string;
   sentiment: "positive" | "negative" | "neutral" | null;

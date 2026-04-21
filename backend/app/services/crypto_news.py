@@ -28,6 +28,7 @@ FEEDS: list[tuple[str, str]] = [
 # Symbol → list of aliases to match in titles. Kept small to avoid false positives
 # (a bare "LINK" hits everywhere; we require the alias form).
 SYMBOL_ALIASES: dict[str, list[str]] = {
+    # Major
     "btc": ["bitcoin", "btc"],
     "eth": ["ethereum", "ether", "eth"],
     "sol": ["solana", "sol"],
@@ -40,10 +41,23 @@ SYMBOL_ALIASES: dict[str, list[str]] = {
     "dot": ["polkadot", "dot"],
     "sui": ["sui"],
     "ondo": ["ondo"],
+    # AI
     "near": ["near protocol", "near"],
     "render": ["render", "rndr"],
     "fet": ["fetch.ai", "fetch ai", "artificial superintelligence alliance"],
     "tao": ["bittensor", "tao"],
+    # DeFi
+    "uni": ["uniswap"],
+    "aave": ["aave"],
+    "mkr": ["maker", "makerdao", "mkr"],
+    # L2 Scaling
+    "arb": ["arbitrum"],
+    "op": ["optimism"],
+    "pol": ["polygon", "matic"],
+    # Meme
+    "wif": ["dogwifhat", "dogwifcoin", "wif"],
+    "pepe": ["pepe"],
+    "bonk": ["bonk"],
 }
 
 

@@ -12,6 +12,7 @@ from app.api.deps import get_settings, get_supabase
 from app.services.coingecko import TRACKED_COINS, fetch_coin_metadata
 from app.services.crypto_news import fetch_crypto_news
 from app.services.market_calendar import is_market_open_today
+from app.services.news_translator import translate_headlines
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,7 @@ async def _run_crypto_batch_async() -> dict:
             coin_symbols=[c["symbol"] for c in TRACKED_COINS],
             limit=40,
         )
+        news_rows = translate_headlines(news_rows, settings)
         svc.upsert_coin_news(news_rows)
     except Exception:
         logger.exception("Crypto news fetch failed")
