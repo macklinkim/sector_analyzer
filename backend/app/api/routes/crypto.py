@@ -12,7 +12,7 @@ from app.agents.crypto_analyst import analyze_crypto_scores
 from app.api.deps import get_settings, get_supabase
 from app.config import Settings
 from app.services.coingecko import TRACKED_COINS, fetch_coin_metadata
-from app.services.cryptopanic import fetch_crypto_news
+from app.services.crypto_news import fetch_crypto_news
 from app.services.supabase import SupabaseService
 
 logger = logging.getLogger(__name__)
@@ -56,17 +56,13 @@ async def trigger_daily_crypto_batch(
         logger.error("CoinGecko fetch failed: %s", e, exc_info=True)
         meta_rows = svc.get_coin_metadata()  # fall back to stale cache for downstream steps
 
-    # 2. News (CryptoPanic, 1 API call)
+    # 2. News (CryptoCompare, 1 API call, no key required)
     symbols = [c["symbol"] for c in TRACKED_COINS]
     try:
-        news_rows = await fetch_crypto_news(
-            api_key=settings.cryptopanic_api_key,
-            coin_symbols=symbols,
-            limit=40,
-        )
+        news_rows = await fetch_crypto_news(coin_symbols=symbols, limit=40)
         svc.upsert_coin_news(news_rows)
     except Exception as e:
-        logger.error("CryptoPanic fetch failed: %s", e, exc_info=True)
+        logger.error("Crypto news fetch failed: %s", e, exc_info=True)
         news_rows = svc.get_latest_coin_news(limit=40)
 
     # 3. AI scores (Claude)

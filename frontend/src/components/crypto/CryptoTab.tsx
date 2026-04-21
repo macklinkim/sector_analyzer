@@ -283,7 +283,7 @@ function CryptoNewsFeed({ news, loading }: { news: CoinNews[]; loading: boolean 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">뉴스 (CryptoPanic)</CardTitle>
+        <CardTitle className="text-sm">뉴스 (RSS 통합)</CardTitle>
       </CardHeader>
       <CardContent>
         {loading && news.length === 0 ? (

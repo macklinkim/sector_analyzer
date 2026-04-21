@@ -10,7 +10,7 @@ from app.agents.graph import build_graph
 from app.agents.state import create_initial_state
 from app.api.deps import get_settings, get_supabase
 from app.services.coingecko import TRACKED_COINS, fetch_coin_metadata
-from app.services.cryptopanic import fetch_crypto_news
+from app.services.crypto_news import fetch_crypto_news
 from app.services.market_calendar import is_market_open_today
 
 logger = logging.getLogger(__name__)
@@ -46,13 +46,12 @@ async def _run_crypto_batch_async() -> dict:
 
     try:
         news_rows = await fetch_crypto_news(
-            api_key=settings.cryptopanic_api_key,
             coin_symbols=[c["symbol"] for c in TRACKED_COINS],
             limit=40,
         )
         svc.upsert_coin_news(news_rows)
     except Exception:
-        logger.exception("CryptoPanic fetch failed")
+        logger.exception("Crypto news fetch failed")
         news_rows = svc.get_latest_coin_news(limit=40)
 
     try:

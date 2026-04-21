@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # Comma-separated names with admin privileges (user management modal)
     admin_users: str = "mack,macklin"
 
-    # Crypto data sources
+    # Crypto data sources (CryptoCompare news API is keyless; placeholder kept for future paid tier)
     cryptopanic_api_key: str = ""
 
     # Playwright
