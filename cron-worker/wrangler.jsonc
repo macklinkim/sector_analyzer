@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sector-analyzer-cron",
+  "main": "src/index.js",
+  "compatibility_date": "2026-04-07",
+  "observability": {
+    "enabled": true
+  },
+  // UTC 기준. 기존 GitHub Actions(EDT 기준)와 동일한 시각.
+  // 서버의 is_market_open_today()가 주말/NYSE 공휴일을 idempotent하게 스킵.
+  "triggers": {
+    "crons": [
+      "30 8 * * 1-5",  // ET 04:30 EDT  pre-market  → /api/analysis/trigger/all
+      "30 14 * * 1-5", // ET 10:30 EDT  market-open → /api/analysis/trigger/all
+      "0 21 * * 1-5",  // ET 17:00 EDT  post-market → /api/analysis/trigger/all
+      "0 4 * * *"      // ET 00:00 EDT  crypto daily → /api/crypto/trigger/daily
+    ]
+  }
+}

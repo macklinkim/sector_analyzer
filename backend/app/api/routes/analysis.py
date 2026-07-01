@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query
 
 from app.agents.graph import build_graph
 from app.agents.state import MarketAnalysisState, create_initial_state
@@ -400,24 +400,13 @@ async def trigger_analyze(
         raise HTTPException(status_code=500, detail=f"Analyze pipeline failed: {e}")
 
 
-@router.post("/trigger/all")
-async def trigger_all(
-    x_api_key: str = Header(..., alias="X-API-Key"),
-    settings: Settings = Depends(get_settings),
-):
-    """전체 파이프라인 분할 실행: data+news 병렬 → analyze 순차.
+async def _run_full_pipeline(settings: Settings) -> dict:
+    """trigger/all 본체: data+news 병렬 → analyze 순차.
 
-    cron-job.org 등 외부 cron에서 이 URL 하나만 호출하면 됨.
-    응답 timeout과 무관하게 서버에서 전체 처리 완료.
+    BackgroundTasks로 실행되며 반환값은 로깅용(HTTP 응답에는 쓰이지 않음).
     """
     import asyncio
 
-    from app.services.market_calendar import is_market_open_today
-
-    _verify_api_key(x_api_key, settings)
-    if not is_market_open_today():
-        logger.info("trigger/all: market closed (weekend/NYSE holiday) — skipping")
-        return {"status": "skipped", "reason": "market_closed"}
     logger.info("trigger/all: starting full pipeline")
 
     saved_all: dict[str, dict] = {}
@@ -525,6 +514,29 @@ async def trigger_all(
     status = "completed" if "error" not in str(saved_all.get("analyze", {})) else "partial_failure"
     logger.info("trigger/all finished: %s", status)
     return {"status": status, "saved": saved_all}
+
+
+@router.post("/trigger/all", status_code=202)
+async def trigger_all(
+    background_tasks: BackgroundTasks,
+    x_api_key: str = Header(..., alias="X-API-Key"),
+    settings: Settings = Depends(get_settings),
+):
+    """전체 파이프라인을 백그라운드로 실행하고 즉시 202를 반환.
+
+    Cloudflare Cron 등 외부 스케줄러가 이 URL 하나만 POST하면 됨.
+    파이프라인(3~4분)을 기다리지 않으므로 짧은 응답 타임아웃에도 안전.
+    """
+    from app.services.market_calendar import is_market_open_today
+
+    _verify_api_key(x_api_key, settings)
+    if not is_market_open_today():
+        logger.info("trigger/all: market closed (weekend/NYSE holiday) — skipping")
+        return {"status": "skipped", "reason": "market_closed"}
+
+    background_tasks.add_task(_run_full_pipeline, settings)
+    logger.info("trigger/all: accepted, pipeline running in background")
+    return {"status": "accepted"}
 
 
 # ---------------------------------------------------------------------------

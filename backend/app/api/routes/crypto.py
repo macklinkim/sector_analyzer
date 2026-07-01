@@ -6,7 +6,7 @@ from __future__ import annotations
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException
 
 from app.agents.crypto_analyst import analyze_crypto_scores
 from app.api.deps import get_settings, get_supabase
@@ -39,15 +39,13 @@ def get_coin_ai_scores(svc: SupabaseService = Depends(get_supabase)) -> list[dic
     return svc.get_latest_coin_ai_scores()
 
 
-@router.post("/trigger/daily")
-async def trigger_daily_crypto_batch(
-    settings: Annotated[Settings, Depends(get_settings)],
-    svc: Annotated[SupabaseService, Depends(get_supabase)],
-    x_trigger_key: Annotated[str | None, Header()] = None,
-) -> dict:
-    """Run the full daily crypto pipeline: metadata → news → AI scores."""
-    if settings.trigger_api_key and x_trigger_key != settings.trigger_api_key:
-        raise HTTPException(status_code=403, detail="Invalid trigger key")
+async def _run_crypto_pipeline(settings: Settings) -> dict:
+    """crypto 일일 파이프라인 본체: metadata → news → AI scores.
+
+    BackgroundTasks로 실행되므로 요청 스코프 의존성 대신 자체 SupabaseService를 생성.
+    반환값은 로깅용(HTTP 응답에는 쓰이지 않음).
+    """
+    svc = SupabaseService(settings)
 
     # 1. Metadata (CoinGecko, 1 API call)
     try:
@@ -75,8 +73,28 @@ async def trigger_daily_crypto_batch(
         logger.error("Crypto analyst failed: %s", e, exc_info=True)
         scores = []
 
-    return {
+    result = {
         "metadata_count": len(meta_rows),
         "news_count": len(news_rows),
         "scores_count": len(scores),
     }
+    logger.info("crypto/trigger/daily finished: %s", result)
+    return result
+
+
+@router.post("/trigger/daily", status_code=202)
+async def trigger_daily_crypto_batch(
+    background_tasks: BackgroundTasks,
+    settings: Annotated[Settings, Depends(get_settings)],
+    x_trigger_key: Annotated[str | None, Header()] = None,
+) -> dict:
+    """crypto 일일 파이프라인을 백그라운드로 실행하고 즉시 202를 반환.
+
+    파이프라인을 기다리지 않으므로 짧은 응답 타임아웃에도 안전.
+    """
+    if settings.trigger_api_key and x_trigger_key != settings.trigger_api_key:
+        raise HTTPException(status_code=403, detail="Invalid trigger key")
+
+    background_tasks.add_task(_run_crypto_pipeline, settings)
+    logger.info("crypto/trigger/daily: accepted, pipeline running in background")
+    return {"status": "accepted"}
