@@ -198,6 +198,7 @@ class YahooFinanceService:
                 })
             except Exception as e:
                 logger.warning("Failed to fetch indicator %s (%s): %s", name, yf_sym, e)
+            await asyncio.sleep(3)  # Rate limit: 3s between indicator fetches
         return results
 
     async def calculate_momentum(self, symbol: str) -> dict:

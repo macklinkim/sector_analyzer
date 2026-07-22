@@ -25,6 +25,8 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
             logger.warning("Failed to fetch economic indicators: %s", e)
             economic_indicators = []
 
+        import asyncio as _asyncio
+
         momentum = {}
         relative_strength = {}
         for sector in sectors:
@@ -49,6 +51,7 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
                 logger.warning("Failed to calculate 52-week range for %s: %s", symbol, e)
                 sector["week_52_low"] = 0
                 sector["week_52_high"] = 0
+            await _asyncio.sleep(3)  # Rate limit: 3s between sector data calls
 
         # Collect sector history (sparklines) and sector stocks (treemap)
         sector_history: list[dict] = []
@@ -69,9 +72,9 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
                     })
             except Exception as e:
                 logger.warning("Failed to fetch history for %s: %s", symbol, e)
+            await _asyncio.sleep(3)  # Rate limit: 3s between history fetches
 
         # Fetch sector stocks per sector with delay to avoid rate limiting
-        import asyncio as _asyncio
         for sector in sectors:
             sym = sector["symbol"]
             constituents = SECTOR_CONSTITUENTS.get(sym, [])[:15]
@@ -83,7 +86,7 @@ async def data_agent_node(state: MarketAnalysisState, config: RunnableConfig) ->
                     st["etf_symbol"] = sym
                 sector_stocks.extend(stocks)
                 logger.info("Fetched %d stocks for %s", len(stocks), sym)
-                await _asyncio.sleep(2)  # Rate limit delay
+                await _asyncio.sleep(5)  # Rate limit: 5s between sector stock batches
             except Exception as e:
                 logger.warning("Failed to fetch stocks for %s: %s", sym, e)
 

@@ -31,10 +31,12 @@ class NewsAPIService:
         return data.get("articles", [])
 
     async def fetch_all_categories(self, top_n: int = 3) -> dict[str, list[dict]]:
+        import asyncio
         results = {}
         for label, api_category in CATEGORY_MAP.items():
             articles = await self.fetch_top_headlines(api_category, page_size=top_n)
             results[label] = articles[:top_n]
+            await asyncio.sleep(2)  # Rate limit: 2s between categories
         return results
 
     async def close(self) -> None:
