@@ -100,10 +100,29 @@ export function SectorHeatmap({ sectors, loading, onSectorClick }: SectorHeatmap
     etf_symbol: s.etf_symbol,
   }));
 
+  const latestCollectedAt = sectors
+    .map((s) => s.collected_at)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
+  const collectedLabel = latestCollectedAt
+    ? new Date(latestCollectedAt).toLocaleString("ko-KR", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle>Sector Heatmap</CardTitle>
+        {collectedLabel && (
+          <span className="text-[10px] text-muted-foreground sm:text-xs">
+            {collectedLabel} 갱신
+          </span>
+        )}
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={280}>

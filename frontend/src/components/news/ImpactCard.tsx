@@ -27,6 +27,12 @@ function getImpactLabelColor(label: string | null): string {
   return "text-muted-foreground";
 }
 
+function getSentimentBadgeColor(label: string | null | undefined): string {
+  if (label === "긍정") return "bg-emerald-500/20 text-emerald-400";
+  if (label === "부정") return "bg-red-500/20 text-red-400";
+  return "bg-gray-500/20 text-gray-400";
+}
+
 const CATEGORY_STYLE: Record<string, { label: string; color: string }> = {
   A_MACRO: { label: "매크로", color: "bg-red-500/20 text-red-400" },
   B_INDUSTRY: { label: "산업", color: "bg-amber-500/20 text-amber-400" },
@@ -47,6 +53,24 @@ export function ImpactCard({ article, impact }: ImpactCardProps) {
       rel="noopener noreferrer"
       className="block rounded-lg border border-border p-3 transition-colors hover:bg-muted/30"
     >
+      {score > 0 && (
+        <div className="mb-2 flex flex-wrap items-center gap-1.5 sm:hidden">
+          <span className={cn("inline-flex items-center justify-center rounded px-2 py-0.5 text-sm font-bold text-foreground", getSentimentBadgeColor(article.impact_label))}>
+            {score}
+          </span>
+          {catStyle && (
+            <span className={cn("inline-block rounded px-2 py-0.5 text-sm font-bold", catStyle.color)}>
+              {catStyle.label}
+            </span>
+          )}
+          {article.related_sector && (
+            <span className={cn("inline-block rounded px-2 py-0.5 text-sm font-bold text-foreground", getSentimentBadgeColor(article.impact_label))}>
+              {article.related_sector}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h4 className="line-clamp-2 text-sm font-medium text-foreground">
@@ -92,7 +116,7 @@ export function ImpactCard({ article, impact }: ImpactCardProps) {
         </div>
 
         {score > 0 && (
-          <div className="flex shrink-0 flex-col items-end gap-1">
+          <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
             <span
               className={cn(
                 "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold",
@@ -102,7 +126,7 @@ export function ImpactCard({ article, impact }: ImpactCardProps) {
               {score}
             </span>
             {catStyle && (
-              <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium", catStyle.color)}>
+              <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight", catStyle.color)}>
                 {catStyle.label}
               </span>
             )}

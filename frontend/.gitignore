@@ -29,3 +29,12 @@ dist-ssr
 !.dev.vars.example
 .env*
 !.env.example
+
+# debug json dumps
+*.json
+!package.json
+!package-lock.json
+!tsconfig*.json
+!wrangler.jsonc
+!components.json
+rss.xml

@@ -14,8 +14,6 @@ interface SectorSparklineProps {
 }
 
 const PERIOD_DAYS = 30;
-const CACHE_KEY = "sparkline_all";
-const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 
 function MiniChart({ data, positive }: { data: SparkPoint[]; positive: boolean }) {
   if (data.length < 2) {
@@ -88,18 +86,6 @@ export function SectorSparkline({ sectors, selectedSector, onSectorClick }: Sect
   const [loaded, setLoaded] = useState(false);
 
   const fetchAll = useCallback(async () => {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      try {
-        const { data, ts } = JSON.parse(cached) as { data: Record<string, SparkPoint[]>; ts: number };
-        if (Date.now() - ts < CACHE_TTL_MS) {
-          setHistoryMap(data);
-          setLoaded(true);
-          return;
-        }
-      } catch { /* fetch fresh */ }
-    }
-
     try {
       const result: SectorWithHistory[] = await api.getSectorsWithHistory(PERIOD_DAYS);
       const map: Record<string, SparkPoint[]> = {};
@@ -107,7 +93,6 @@ export function SectorSparkline({ sectors, selectedSector, onSectorClick }: Sect
         map[s.sector] = s.history;
       }
       setHistoryMap(map);
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data: map, ts: Date.now() }));
     } catch { /* ignore */ }
     setLoaded(true);
   }, []);

@@ -108,8 +108,33 @@ npm run preview    # 빌드 결과 로컬 미리보기
 ## Constraints & Warnings
 
 - NewsAPI 무료 한도: 100 req/일 (배치 캐싱 필수)
-- AI 분석 결과는 투자 조언이 아님 — 면책 조항(Disclaimer) 항상 표시
-- EODHD API 키 미발급 상태 — 개발 시작 전 발급 필요
-- NewsAPI 키 미발급 상태 — 개발 시작 전 발급 필요
-- Playwright MCP: 브라우저 렌더링은 수 초~수십 초 소요 — Heavy Track으로만 사용
 - Anti-bot 차단 위험: 대형 금융 사이트 Cloudflare 등 봇 방어 → Stealth/프록시 우회 필요 가능
+
+💻 Windows Terminal Environment Summary
+이 환경은 Windows이지만, Scoop을 통해 리눅스 표준 유틸리티와 고성능 Modern CLI가 구축되어 있습니다. 터미널 제어 및 스크립팅 시 다음 도구들을 우선 사용하십시오.
+
+1. GNU/Linux Core Utilities
+파일/텍스트: ls, cp, mv, rm, cat, grep, sed, awk (Gawk) 사용 가능.
+네트워크: curl, wget.
+권한/빌드: sudo, make.
+에디터: vim, nvim (Neovim).
+
+2. Modern CLI Alternatives (AI 우선 권장)
+일반 명령어보다 아래의 고성능/가독성 도구를 사용하는 것을 선호합니다.
+파일 탐색: eza (replaces ls), fd (replaces find).
+내용 검색: rg (ripgrep, replaces grep).
+파일 열람: bat (replaces cat, syntax highlighting 지원).
+디렉토리 이동: z (zoxide, smart cd).
+데이터 파싱: jq (JSON), yq (YAML).
+모니터링: btop.
+문서 확인: tldr (replaces man).
+
+3. 기타 도구
+Git: git, gh (GitHub CLI).
+압축: 7zip.
+검색: fzf (Fuzzy Finder).
+프롬프트: starship.
+
+⚠️ 주의사항
+모든 경로는 가급적 POSIX 스타일(/)로 처리하십시오.
+Windows CMD 또는 PowerShell 기반에서 실행되므로 복잡한 파이프라인 연산 시 환경 호환성을 고려하십시오.
