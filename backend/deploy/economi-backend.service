@@ -1,0 +1,20 @@
+[Unit]
+Description=Economi Analyzer FastAPI backend
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/economi_analyzer/backend
+EnvironmentFile=/opt/economi_analyzer/backend/.env
+# venv python; start.py reads PORT from env (defaults 8000)
+Environment=PORT=8000
+ExecStart=/opt/economi_analyzer/.venv/bin/python start.py
+Restart=on-failure
+RestartSec=5
+# APScheduler runs in-process; single process only
+KillSignal=SIGINT
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

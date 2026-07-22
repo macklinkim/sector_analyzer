@@ -1,0 +1,30 @@
+# Fly.io config — Economi Analyzer backend.
+# Single always-on machine: APScheduler runs in-process + fire-and-forget batches
+# must survive after the 202 response, so the machine must NEVER auto-stop.
+app = "economi-analyzer"
+primary_region = "nrt"  # Tokyo — closest to Korea
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8000"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  # Keep the machine running 24/7 (scheduler + background batches).
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"  # bump to 1024mb if batches OOM

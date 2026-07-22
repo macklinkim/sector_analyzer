@@ -9,7 +9,7 @@
  *   npx wrangler secret put TRIGGER_API_KEY
  */
 
-const RAILWAY = "https://economy-analyzer-production.up.railway.app";
+const BACKEND = "https://economi-analyzer.fly.dev";
 
 // wrangler.jsonc의 crypto 스케줄과 동일해야 함.
 const CRYPTO_CRON = "0 4 * * *";
@@ -23,9 +23,9 @@ export default {
     }
 
     if (event.cron === CRYPTO_CRON) {
-      await ping(`${RAILWAY}/api/crypto/trigger/daily`, { "X-Trigger-Key": key });
+      await ping(`${BACKEND}/api/crypto/trigger/daily`, { "X-Trigger-Key": key });
     } else {
-      await ping(`${RAILWAY}/api/analysis/trigger/all`, { "X-API-Key": key });
+      await ping(`${BACKEND}/api/analysis/trigger/all`, { "X-API-Key": key });
     }
   },
 };

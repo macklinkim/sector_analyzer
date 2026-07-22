@@ -1,0 +1,6 @@
+# Replace YOURNAME.duckdns.org with your DuckDNS (or real) domain.
+# Caddy auto-provisions Let's Encrypt TLS via HTTP-01 challenge (needs port 80 + 443 open).
+YOURNAME.duckdns.org {
+    reverse_proxy 127.0.0.1:8000
+    encode gzip
+}
