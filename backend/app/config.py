@@ -13,11 +13,12 @@ class Settings(BaseSettings):
     # Supabase Auth JWT secret (Dashboard → Settings → API → JWT Secret)
     supabase_jwt_secret: str = ""
 
-    # Claude model per analysis type — cheaper models for simple classification,
-    # reserve the stronger model for the analyst's multi-factor reasoning.
+    # Claude model per analysis type. claude-sonnet-4-20250514 was retired on
+    # 2026-06-15 (404 not_found_error), which silently broke the analyst batch;
+    # haiku-4-5 keeps token usage minimal and is already proven on news/crisis.
     claude_model_news: str = "claude-haiku-4-5-20251001"
     claude_model_crisis: str = "claude-haiku-4-5-20251001"
-    claude_model_analyst: str = "claude-sonnet-4-20250514"
+    claude_model_analyst: str = "claude-haiku-4-5-20251001"
 
     # Scheduler
     pre_market_time: str = "08:30"

@@ -325,7 +325,7 @@ class MarketAnalysisState(TypedDict):
 #### Analyst Agent (`analyst_agent.py`)
 - **입력:** MarketData + NewsData
 - **출력:** AnalysisResults (regime, scoreboards, rotation_signals, report)
-- **모델:** Claude Sonnet 4 (`claude-sonnet-4-20250514`)
+- **모델:** Claude Haiku 4.5 (`claude-haiku-4-5-20251001`)
 - **로직:** 3-Step Validation (아래 참조)
 
 ---
@@ -757,7 +757,7 @@ Render Free tier spin-down 문제 대응을 위해 외부 cron(cron-job.org)에�
 ```python
 client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 response = client.messages.create(
-    model="claude-sonnet-4-20250514",
+    model="claude-haiku-4-5-20251001",
     max_tokens=4096,
     messages=[{"role": "user", "content": prompt}],
 )

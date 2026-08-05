@@ -57,7 +57,7 @@ python -m venv .venv
 1. https://console.anthropic.com 접속 → 계정 생성/로그인
 2. API Keys → Create Key
 3. 크레딧 충전 (사용량 기반 과금)
-4. 모델: `claude-sonnet-4-20250514` 권장 (비용 효율)
+4. 모델: `claude-haiku-4-5-20251001` 권장 (비용 효율)
 
 ### 2-4. Supabase
 

@@ -427,7 +427,10 @@ async def analyst_agent_node(state: MarketAnalysisState, config: RunnableConfig)
     try:
         response = client.messages.create(
             model=settings.claude_model_analyst,
-            max_tokens=4096,
+            # 11개 섹터가 전부 pre-filter를 통과하면 4096으로는 JSON이 잘려
+            # 파싱이 실패한다(= "분석 실패" 폴백). 출력 토큰은 실사용량만
+            # 과금되므로 상한만 올린다.
+            max_tokens=16000,
             system=[
                 {
                     "type": "text",
